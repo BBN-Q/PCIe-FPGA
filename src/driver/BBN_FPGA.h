@@ -9,18 +9,18 @@
 
 
 #define VENDOR_ID 0x1172
-#define DEVICE_ID 0x0004
+#define DEVICE_ID 0xbb4e
 
-#define DRIVER_NAME "piecomm"
+#define DRIVER_NAME "bbn_fpga"
 #define BOARD_NAME "piecomm1"
 #define NUM_BARS 3  //we use up to BAR2
 
 
 //fileio.c functions for device
-int piecomm_open(struct inode *inode, struct file *file);
-int piecomm_close(struct inode *inode, struct file *file);
-ssize_t piecomm_read(struct file *file, char __user *buf, size_t count, loff_t *pos);
-ssize_t piecomm_write(struct file *file, const char __user *buf, size_t count, loff_t *pos);
+int fpga_open(struct inode *inode, struct file *file);
+int fpga_close(struct inode *inode, struct file *file);
+ssize_t fpga_read(struct file *file, char __user *buf, size_t count, loff_t *pos);
+ssize_t fpga_write(struct file *file, const char __user *buf, size_t count, loff_t *pos);
 
 
 /* Maximum size of driver buffer (allocated with kalloc()).
