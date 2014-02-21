@@ -13,6 +13,10 @@ The driver is currently written for a Arria II GX dev. board using a hard IP PCI
 1. Load the sof bitfile into the FPGA either via the USB-Blaster or the web interface that boots from the reference design in flash. If the bit file loads correctly the debugging LED's will flash out a counting pattern to let you know it's alive. 
 2. Perform a software-reboot of the computer so the PCI bus picks up the new configuration.  Keep an eye on the LED's to make sure the board didn't lose power. 
 
+
+Driver Software
+---------------
+
 1. Clone/download the repository into some convenient location.  
 2. Open a shell prompt and move into the repo. directory: ```cd /path/to/repo```
 3. Move into the driver folder and compile the driver: ```cd src/driver; make```
