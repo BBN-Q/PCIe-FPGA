@@ -41,7 +41,7 @@ struct DevInfo_t {
   /* length of each memory region. Used for error checking. */
   size_t barLengths[NUM_BARS];
 
-  /* temporary buffer. If allocated, will be BUF_SIZE. */
+  /* temporary buffer. If allocated, will be BUFFER_SIZE. */
   char *buffer;
   
   /* Mutex for this device. */

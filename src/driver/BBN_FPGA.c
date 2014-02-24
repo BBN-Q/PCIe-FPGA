@@ -50,8 +50,8 @@ ssize_t rw_dispatcher(struct file *filePtr, char __user *buf, size_t count, bool
 	struct IOCmd_t iocmd; 
 	void * startAddr;
 
-	uint8_t val8;
-	ssize_t retVal = 0;
+	size_t bytesDone = 0;
+	size_t bytesToTransfer = 0;
 
 	struct DevInfo_t * devInfo = (struct DevInfo_t *) filePtr->private_data;
 
@@ -67,41 +67,28 @@ ssize_t rw_dispatcher(struct file *filePtr, char __user *buf, size_t count, bool
 	//Map the device address to the iomaped memory
 	startAddr = (void*) (devInfo->bar[iocmd.barNum] + iocmd.devAddr) ;
 
-	if (rwFlag) {
-	
-		printk(KERN_INFO "[BBN FPGA] rw_dispatcher: Reading %u bytes from 0x%p.\n", (unsigned int) count, iocmd.userAddr);
-		switch (count){
-			case 1:
-				val8 = ioread8(startAddr);
-				printk(KERN_INFO "Read 0x%x from 0x%p", val8, startAddr);
-				copy_to_user(iocmd.userAddr, &val8, 1);
-				retVal = 1;
-				break;
-			default:
-				retVal = 0;
+	printk(KERN_INFO "[BBN FPGA] rw_dispatcher: Reading/writing %u bytes from 0x%p.\n", (unsigned int) count, iocmd.userAddr);
+	while (count > 0){
+		bytesToTransfer = (count > BUFFER_SIZE) ? BUFFER_SIZE : count;
 
+
+		if (rwFlag) {
+			//First read from device into kernel memory 
+			memcpy_fromio(devInfo->buffer, startAddr + bytesDone, bytesToTransfer);
+			//Then into user space
+			copy_to_user(iocmd.userAddr + bytesDone, devInfo->buffer, bytesToTransfer);
 		}
-	}
-	else{
-
-		printk(KERN_INFO "[BBN FPGA] rw_dispatcher: Writing %u bytes from 0x%p.\n", (unsigned int) count, iocmd.userAddr);
-
-		switch (count){
-			case 1:
-				copy_from_user(&val8, iocmd.userAddr, 1);
-				printk(KERN_INFO "Writing 0x%x to 0x%p\n", val8, startAddr);
-				iowrite8(val8, startAddr);
-				retVal = 1;
-				break;
-			default:
-				retVal = 0;
+		else{
+			//First copy from user to buffer
+			copy_from_user(devInfo->buffer, iocmd.userAddr + bytesDone, bytesToTransfer);
+			//Then into the device
+			memcpy_toio(startAddr + bytesDone, devInfo->buffer, bytesToTransfer);
 		}
-
-
-
+		bytesDone += bytesToTransfer;
+		count -= bytesToTransfer;
 	}
 	up(&devInfo->sem);
-	return 0;
+	return bytesDone;
 }
 
 int fpga_open(struct inode *inode, struct file *filePtr) {
