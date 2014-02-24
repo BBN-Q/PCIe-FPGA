@@ -67,7 +67,7 @@ ssize_t rw_dispatcher(struct file *filePtr, char __user *buf, size_t count, bool
 	//Map the device address to the iomaped memory
 	startAddr = (void*) (devInfo->bar[iocmd.barNum] + iocmd.devAddr) ;
 
-	printk(KERN_INFO "[BBN FPGA] rw_dispatcher: Reading/writing %u bytes from 0x%p.\n", (unsigned int) count, iocmd.userAddr);
+	printk(KERN_INFO "[BBN FPGA] rw_dispatcher: Reading/writing %u bytes from user address 0x%p to device address %u.\n", (unsigned int) count, iocmd.userAddr, iocmd.devAddr);
 	while (count > 0){
 		bytesToTransfer = (count > BUFFER_SIZE) ? BUFFER_SIZE : count;
 
