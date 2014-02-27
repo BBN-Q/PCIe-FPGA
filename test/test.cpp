@@ -1,6 +1,8 @@
 #include <iostream>
 
 #include <random>
+#include <chrono>
+#include <vector>
 
 //Use Linux file functions for the device
 #include <fcntl.h>
@@ -8,7 +10,7 @@
 
 using std::cout;
 using std::endl;
-
+using std::vector;
 
 struct IOCmd_t {
 	uint32_t cmd; //command word
@@ -65,6 +67,55 @@ bool test_small_writes(int FID, size_t numTries){
 	return success;
 }
 
+
+bool test_long_write(int FID){
+
+	bool success = true;
+	IOCmd_t iocmd = {0,0,0,0};
+
+ 	std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<uint8_t> byteDis;
+    std::uniform_int_distribution<uint32_t> addrDis(0, MEMSIZE/2-1); 	
+
+    //Create a random vector of half the length of the block RAM
+    vector<uint8_t> testVec;
+    for (size_t ct=0; ct<32768; ct++){
+    	testVec.push_back(byteDis(gen));
+    }
+
+    iocmd.devAddr = addrDis(gen);
+    iocmd.userAddr = testVec.data();
+
+    auto start = std::chrono::steady_clock::now();
+
+    write(FID, &iocmd, testVec.size());
+
+    auto end = std::chrono::steady_clock::now();
+
+    cout << "Writing 32kB took " << std::chrono::duration_cast<std::chrono::microseconds>(end-start).count() << " us" << endl;
+
+    vector<uint8_t> testVec2;
+    testVec2.resize(32768);
+    iocmd.userAddr = testVec2.data();
+
+    start = std::chrono::steady_clock::now();
+    read(FID, &iocmd, testVec2.size());
+    end = std::chrono::steady_clock::now();
+
+    cout << "Reading 32kB took " << std::chrono::duration_cast<std::chrono::microseconds>(end-start).count() << " us" << endl;
+
+	for (size_t ct=0; ct<32768; ct++){
+		if (testVec[ct] != testVec2[ct]){
+			cout << "Read/write failed at " << ct << endl;
+			success = false;
+		}
+	}
+	return success;
+}
+
+
+
 int main(int argc, char const *argv[])
 {
 	cout << "Starting test of PIECOMM kernel module." << endl;
@@ -82,6 +133,13 @@ int main(int argc, char const *argv[])
 	if (testResult){
 		cout << "Successfully tested byte and word write/reads." << endl;
 	}
+
+	testResult = test_long_write(FID);
+	if (testResult){
+		cout << "Successfully tested long write/read." << endl;
+	}
+
+
 	close(FID);
 
 	return 0;
