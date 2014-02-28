@@ -1,3 +1,5 @@
+// Copyright 2014 Raytheon BBN Technologies
+// Original Author: Colm Ryan (cryan@bbn.com)
 
 #include <linux/init.h>
 #include <linux/module.h>

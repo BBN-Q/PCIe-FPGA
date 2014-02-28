@@ -1,3 +1,6 @@
+// Copyright 2014 Raytheon BBN Technologies
+// Original Author: Colm Ryan (cryan@bbn.com)
+
 #include <iostream>
 
 #include <random>

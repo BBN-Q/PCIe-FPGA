@@ -1,6 +1,10 @@
 #!/bin/bash
 #Bash script to load BBN FPGA PCIe driver.  Must be run with sudo rights. 
 
+# Copyright 2014 Raytheon BBN Technologies
+# Original Author: Colm Ryan (cryan@bbn.com)
+
+
 # Load the BBN FPGA PCIe driver
 if [ `lsmod | grep -o BBN_FPGA` ]; then
 	echo "BBN FPGA driver has already been loaded. Doing nothing."
