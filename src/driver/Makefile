@@ -1,5 +1,7 @@
 obj-m := BBN_FPGA.o
 
+BBN_FPGA-y := DMA.o
+
 KVERSION = $(shell uname -r)
 
 all:
