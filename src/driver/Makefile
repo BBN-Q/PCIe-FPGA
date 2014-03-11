@@ -6,5 +6,7 @@ KVERSION = $(shell uname -r)
 
 all:
 	make -C /lib/modules/$(KVERSION)/build M=$(PWD) modules
+debug:
+	make -C /lib/modules/$(KVERSION)/build M=$(PWD) EXTRA_CFLAGS="-DDEBUG" modules 
 clean:
 	make -C /lib/modules/$(KVERSION)/build M=$(PWD) clean
