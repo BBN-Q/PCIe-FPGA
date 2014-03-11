@@ -66,6 +66,11 @@ ssize_t rw_dispatcher(struct file *filePtr, char __user *buf, size_t count, bool
 
 	copy_from_user(&iocmd, (void __user *) buf, sizeof(iocmd));
 
+	if (iocmd.cmd == 1) {
+		printk(KERN_INFO "[BBN_FPGA] Dispatching to DMA.");
+		return dma_read(iocmd.userAddr, count, devInfo);
+	}
+
 	//Map the device address to the iomaped memory
 	startAddr = (void*) (devInfo->bar[iocmd.barNum] + iocmd.devAddr) ;
 

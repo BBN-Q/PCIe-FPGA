@@ -25,6 +25,8 @@ ssize_t fpga_read(struct file *file, char __user *buf, size_t count, loff_t *pos
 ssize_t fpga_write(struct file *file, const char __user *buf, size_t count, loff_t *pos);
 
 
+
+
 /* Maximum size of driver buffer (allocated with kalloc()).
  * Needed to copy data from user to kernel space */
 static const size_t BUFFER_SIZE = PAGE_SIZE;
@@ -59,3 +61,6 @@ struct DevInfo_t {
   struct device *device;
 
 };
+
+
+int dma_read(char __user * buf, size_t count, struct DevInfo_t * devInfo);
