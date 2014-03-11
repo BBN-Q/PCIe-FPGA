@@ -1,6 +1,6 @@
-obj-m := BBN_FPGA.o
+obj-m := BBN_FPGA_DRV.o
 
-BBN_FPGA-y := DMA.o
+BBN_FPGA_DRV-y := DMA.o BBN_FPGA.o
 
 KVERSION = $(shell uname -r)
 
