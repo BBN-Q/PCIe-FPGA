@@ -6,11 +6,11 @@
 
 
 # Load the BBN FPGA PCIe driver
-if [ `lsmod | grep -o BBN_FPGA` ]; then
+if [ `lsmod | grep -o BBN_FPGA_DRV` ]; then
 	echo "BBN FPGA driver has already been loaded. Doing nothing."
 	exit
 fi
-insmod BBN_FPGA.ko
+insmod BBN_FPGA_DRV.ko
 
 #Find what major device number was assigned from /proc/devices
 majorNum=$( awk '{ if ($2 ~ /piecomm1/) print $1}' /proc/devices )
