@@ -117,7 +117,27 @@ bool test_long_write(int FID){
 	return success;
 }
 
+bool test_dma_stream(int FID){
 
+	bool success = true;
+	IOCmd_t iocmd = {1,0,0,0};
+
+	//Allocate some aligned memory
+	posix_memalign(&iocmd.userAddr, 4096, 32768);
+
+	read(FID, &iocmd, 32768);
+
+	vector<uint32_t> testVec(static_cast<uint32_t*>(iocmd.userAddr), static_cast<uint32_t*>(iocmd.userAddr)+8192) ;
+
+	for(auto val : testVec){
+		cout << val << endl;
+	}
+
+
+	free(iocmd.userAddr);
+
+	return success;
+}
 
 int main(int argc, char const *argv[])
 {
@@ -142,7 +162,8 @@ int main(int argc, char const *argv[])
 		cout << "Successfully tested long write/read." << endl;
 	}
 
-
+	testResult = test_dma_stream(FID);
+	
 	close(FID);
 
 	return 0;
