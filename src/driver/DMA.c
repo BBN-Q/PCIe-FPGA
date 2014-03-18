@@ -30,32 +30,38 @@ int dma_read(char __user * buf, size_t count, struct DevInfo_t * devInfo){
 	firstPage = ((ssize_t)buf & PAGE_MASK) >> PAGE_SHIFT;
 	lastPage = (((ssize_t)buf+count-1) & PAGE_MASK) >> PAGE_SHIFT;
 	numPages = lastPage - firstPage + 1;
-	printk(KERN_INFO "[BBN FPGA] %u pages for DMA transfer.", (unsigned int)numPages);
+	dev_dbg(&devInfo->pciDev->dev, "Need %u pages for DMA transfer.\n", (unsigned int)numPages);
 
 	pages = kmalloc(numPages * sizeof(struct page*), GFP_KERNEL);
 	sgList = kzalloc(numPages * sizeof(*sgList), GFP_KERNEL);
 	sg_init_table(sgList, numPages);
 
+	down_write(&current->mm->mmap_sem);
 	result = get_user_pages(current, current->mm, (unsigned long)buf & PAGE_MASK, numPages, 1, 0, pages, NULL);
 
 	if (result != numPages){
-		printk(KERN_WARNING "[BBN FPGA] Could not pin user pages.");
+		pr_err("[BBN FPGA] Pinned only %u pages when we expected %u.\n", (unsigned int)result, (unsigned int)numPages);
+		goto fail_release;
+	}
+	else{
+		dev_dbg(&devInfo->pciDev->dev, "Pinned %u pages\n", (unsigned int)result);
 	}
 
 	//Step 3. Get the scatter gather list
-	for(ct=0; ct<numDMAs; ct++){
+	for(ct=0; ct<numPages; ct++){
+		dev_dbg(&devInfo->pciDev->dev, "[BBN_FPGA] Setting sg entry for page %u\n", (unsigned int)ct);
 		sg_set_page(&sgList[ct], pages[ct], PAGE_SIZE, 0);
 	}
 
-
 	numDMAs = pci_map_sg(devInfo->pciDev, sgList, numPages, DMA_FROM_DEVICE);
-	printk(KERN_INFO "[BBN FPGA] Need %u DMA transfers.", (unsigned int)numDMAs);
+	dev_dbg(&devInfo->pciDev->dev, "[BBN FPGA] Need %u DMA transfers.\n", (unsigned int)numDMAs);
 
 	//Step 4.
 	attRow = 0;
 	for_each_sg(sgList, sgEntry, numDMAs, ct){
 		//Write the address translation table
 		pciAddr = sg_dma_address(sgEntry) | 0x1; // +1 to set LSB for 64bit addresses
+		dev_dbg(&devInfo->pciDev->dev, "Writing ATT entry for DMA transfer %d using pciAddr = %llx", ct, pciAddr);
 		iowrite32(pciAddr & 0xFFFFFFFF, devInfo->bar[PCIE_CRA_BAR] + PCIE_CRA_OFFSET + ATT_CRA_OFFSET + 8*attRow);
 		iowrite32(pciAddr >> 32, devInfo->bar[PCIE_CRA_BAR] + PCIE_CRA_OFFSET + ATT_CRA_OFFSET + 8*attRow + 4);
 		attRow++;
@@ -72,15 +78,32 @@ int dma_read(char __user * buf, size_t count, struct DevInfo_t * devInfo){
 	}
 
 	//Wait until finished
+	dev_dbg(&devInfo->pciDev->dev, "Getting DMA status register");
 	dmaStatus = ioread32(devInfo->bar[SGDMA_BAR] + SGDMA_CSR_ADDR);
+	dev_dbg(&devInfo->pciDev->dev, "Got DMA status 0x%x", dmaStatus);
 	while(!(dmaStatus | 0x1)){
-		printk(KERN_INFO "[BBN FPGA] Waiting for reads to finish with dmaStatus = 0x%x.", dmaStatus);
+		dev_dbg(&devInfo->pciDev->dev, "Waiting for reads to finish with dmaStatus = 0x%x.", dmaStatus);
 		dmaStatus = ioread32(devInfo->bar[SGDMA_BAR] + SGDMA_CSR_ADDR);
 	}
 
+
+	dev_dbg(&devInfo->pciDev->dev, "Unmapping the SG list");
 	pci_unmap_sg(devInfo->pciDev, sgList, numPages, DMA_FROM_DEVICE);
+
+	dev_dbg(&devInfo->pciDev->dev, "Releasing the user pages");
+	for(ct=0; ct<numPages; ct++){
+		set_page_dirty_lock(pages[ct]);
+		put_page(pages[ct]);
+	}
+
+
+	dev_dbg(&devInfo->pciDev->dev, "Releasing memory");
+	fail_release:
 	kfree(pages);
 	kfree(sgList);
 
-	return 0;
+	dev_dbg(&devInfo->pciDev->dev, "Returning semaphore");
+	up_write(&current->mm->mmap_sem);
+
+	return count;
 }

@@ -1,6 +1,5 @@
 #include <asm/scatterlist.h>
 
-
 static const uint32_t ATT_CRA_OFFSET = 0x1000;
 static const uint32_t PCIE_CRA_OFFSET = 0;
 static const int PCIE_CRA_BAR = 2;
