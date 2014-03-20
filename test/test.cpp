@@ -125,13 +125,19 @@ bool test_dma_stream(int FID){
 	//Allocate some aligned memory
 	posix_memalign(&iocmd.userAddr, 4096, 32768);
 
+    auto start = std::chrono::steady_clock::now();
+
 	read(FID, &iocmd, 32768);
 
-	vector<uint32_t> testVec(static_cast<uint32_t*>(iocmd.userAddr), static_cast<uint32_t*>(iocmd.userAddr)+8192) ;
+	vector<uint32_t> testVec(static_cast<uint32_t*>(iocmd.userAddr), static_cast<uint32_t*>(iocmd.userAddr)+32768) ;
 
-	for(auto val : testVec){
-		cout << val << endl;
-	}
+    auto end = std::chrono::steady_clock::now();
+
+    cout << "DMA Reading 32kB took " << std::chrono::duration_cast<std::chrono::microseconds>(end-start).count() << " us" << endl;
+
+	// for(auto val : testVec){
+	// 	cout << val << endl;
+	// }
 
 
 	free(iocmd.userAddr);
