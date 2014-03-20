@@ -22,9 +22,11 @@ int dma_read(char __user * buf, size_t count, struct DevInfo_t * devInfo){
 	struct page ** pages;
 	struct scatterlist * sgList;
 	struct scatterlist * sgEntry;
-	int result, numDMAs, ct, attRow;
-	dma_addr_t pciAddr;
+	int result, numDMAs, ct, attRow, is64bit;
+	dma_addr_t pciAddr = 0;
+	uint32_t pciAddrOffset = 0;
 	uint32_t dmaLength, dmaStatus;
+
 
 	//Step 1. Pin the buffer
 	firstPage = ((ssize_t)buf & PAGE_MASK) >> PAGE_SHIFT;
@@ -57,31 +59,46 @@ int dma_read(char __user * buf, size_t count, struct DevInfo_t * devInfo){
 	dev_dbg(&devInfo->pciDev->dev, "[BBN FPGA] Need %u DMA transfers.\n", (unsigned int)numDMAs);
 
 	//Step 4.
+	//Report whether we can actually do DMA to a 64bit address space
+	if(!pci_dma_supported(devInfo->pciDev, 0xFFFFFFFFFFFFFFFF )){
+		dev_dbg(&devInfo->pciDev->dev, "Device supports 64bit DMA");
+		is64bit = 1;
+	}
+	else{
+		dev_dbg(&devInfo->pciDev->dev, "Device does not support 64bit DMA");
+		is64bit = 0;
+	}
+
+
 	attRow = 0;
 	for_each_sg(sgList, sgEntry, numDMAs, ct){
 		//Write the address translation table
-		pciAddr = sg_dma_address(sgEntry) | 0x1; // +1 to set LSB for 64bit addresses
+		pciAddr = sg_dma_address(sgEntry);
+     	// +1 to set LSB for 64bit addresses
 		dev_dbg(&devInfo->pciDev->dev, "Writing ATT entry for DMA transfer %d using pciAddr = %llx", ct, pciAddr);
-		iowrite32(pciAddr & 0xFFFFFFFF, devInfo->bar[PCIE_CRA_BAR] + PCIE_CRA_OFFSET + ATT_CRA_OFFSET + 8*attRow);
-		iowrite32(pciAddr >> 32, devInfo->bar[PCIE_CRA_BAR] + PCIE_CRA_OFFSET + ATT_CRA_OFFSET + 8*attRow + 4);
-		attRow++;
+		iowrite32(pciAddr & 0xFFF00000, devInfo->bar[PCIE_CRA_BAR] + PCIE_CRA_OFFSET + ATT_CRA_OFFSET + 8*attRow);
+		// iowrite32(pciAddr >> 32, devInfo->bar[PCIE_CRA_BAR] + PCIE_CRA_OFFSET + ATT_CRA_OFFSET + 8*attRow + 4);
 
 		//Write the DMA descriptor
 		//write address (each ATT entry addresses up to 1MB)
-		iowrite32(attRow * 0xFFFFF, devInfo->bar[SGDMA_BAR] + SGDMA_DESCRIPTOR_ADDR);
+		pciAddrOffset = pciAddr & 0xFFFFF;
+		dev_dbg(&devInfo->pciDev->dev, "Writing DMA write address = %x to %x", PCIE_TX_PORT_AVALON_OFFSET + attRow * 0x100000 + pciAddrOffset, SGDMA_DESCRIPTOR_ADDR + 4 );
+		iowrite32(PCIE_TX_PORT_AVALON_OFFSET + attRow * 0x100000 + pciAddrOffset, devInfo->bar[SGDMA_BAR] + SGDMA_DESCRIPTOR_ADDR + 4);
 		//don't need a read address
 		//write length
 		dmaLength = sg_dma_len(sgEntry);
+		dev_dbg(&devInfo->pciDev->dev, "Writing DMA length = %x to %x", dmaLength, SGDMA_DESCRIPTOR_ADDR + 8 );
 		iowrite32(dmaLength, devInfo->bar[SGDMA_BAR] + SGDMA_DESCRIPTOR_ADDR + 8);
 		//write control word
 		iowrite32(DESCRIPTOR_CONTROL_GO_MASK | DESCRIPTOR_CONTROL_END_ON_EOP_MASK, devInfo->bar[SGDMA_BAR] + SGDMA_DESCRIPTOR_ADDR + 12);
+		attRow++;
 	}
 
 	//Wait until finished
 	dev_dbg(&devInfo->pciDev->dev, "Getting DMA status register");
 	dmaStatus = ioread32(devInfo->bar[SGDMA_BAR] + SGDMA_CSR_ADDR);
 	dev_dbg(&devInfo->pciDev->dev, "Got DMA status 0x%x", dmaStatus);
-	while(!(dmaStatus | 0x1)){
+	while((dmaStatus & 0x1)){
 		dev_dbg(&devInfo->pciDev->dev, "Waiting for reads to finish with dmaStatus = 0x%x.", dmaStatus);
 		dmaStatus = ioread32(devInfo->bar[SGDMA_BAR] + SGDMA_CSR_ADDR);
 	}
