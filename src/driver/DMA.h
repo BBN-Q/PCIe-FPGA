@@ -8,6 +8,7 @@ static const uint32_t PCIE_TX_PORT_AVALON_OFFSET = 0;
 
 static const uint32_t SGDMA_CSR_ADDR = 0x4000;
 static const uint32_t SGDMA_DESCRIPTOR_ADDR = 0x4020;
+static const uint32_t SGDMA_RESPONSE_ADDR = 0x4030;
 static const int SGDMA_BAR = 2;
 
 

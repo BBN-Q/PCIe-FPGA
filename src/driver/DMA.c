@@ -26,6 +26,7 @@ int dma_read(char __user * buf, size_t count, struct DevInfo_t * devInfo){
 	dma_addr_t pciAddr = 0;
 	uint32_t pciAddrOffset = 0;
 	uint32_t dmaLength, dmaStatus;
+	uint16_t dmaResponseLevel;
 
 
 	//Step 1. Pin the buffer
@@ -99,8 +100,22 @@ int dma_read(char __user * buf, size_t count, struct DevInfo_t * devInfo){
 	dmaStatus = ioread32(devInfo->bar[SGDMA_BAR] + SGDMA_CSR_ADDR);
 	dev_dbg(&devInfo->pciDev->dev, "Got DMA status 0x%x", dmaStatus);
 	while((dmaStatus & 0x1)){
-		dev_dbg(&devInfo->pciDev->dev, "Waiting for reads to finish with dmaStatus = 0x%x.", dmaStatus);
+		// dev_dbg(&devInfo->pciDev->dev, "Waiting for reads to finish with dmaStatus = 0x%x.", dmaStatus);
 		dmaStatus = ioread32(devInfo->bar[SGDMA_BAR] + SGDMA_CSR_ADDR);
+	}
+	dev_dbg(&devInfo->pciDev->dev, "Getting DMA status register");
+	dmaStatus = ioread32(devInfo->bar[SGDMA_BAR] + SGDMA_CSR_ADDR);
+	dev_dbg(&devInfo->pciDev->dev, "Got DMA status 0x%x", dmaStatus);
+
+	//Read the response registers
+	dmaResponseLevel = ioread16(devInfo->bar[SGDMA_BAR] + SGDMA_CSR_ADDR + 0XC);
+	dev_dbg(&devInfo->pciDev->dev, "DMA response level = %d", dmaResponseLevel);
+	while ( dmaResponseLevel > 0) {
+		dmaStatus = ioread32(devInfo->bar[SGDMA_BAR] + SGDMA_RESPONSE_ADDR);
+		dev_dbg(&devInfo->pciDev->dev, "DMA response bytes transferred = 0x%x", dmaStatus);
+		dmaStatus = ioread32(devInfo->bar[SGDMA_BAR] + SGDMA_RESPONSE_ADDR + 4);
+		dev_dbg(&devInfo->pciDev->dev, "DMA response error = 0x%x", dmaStatus);
+		dmaResponseLevel = ioread16(devInfo->bar[SGDMA_BAR] + SGDMA_CSR_ADDR + 0XC);
 	}
 
 
