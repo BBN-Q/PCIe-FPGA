@@ -24,9 +24,11 @@ int dma_read(char __user * buf, size_t count, struct DevInfo_t * devInfo){
 	struct scatterlist * sgEntry;
 	int result, numDMAs, ct, attRow, is64bit;
 	dma_addr_t pciAddr = 0;
+	dma_addr_t pciAddr_prev = 0;
 	uint32_t pciAddrOffset = 0;
 	uint32_t dmaLength, dmaStatus;
-	uint16_t dmaResponseLevel;
+	uint16_t dmaEntriesLeft;
+	// uint16_t dmaResponseLevel;
 
 
 	//Step 1. Pin the buffer
@@ -71,14 +73,44 @@ int dma_read(char __user * buf, size_t count, struct DevInfo_t * devInfo){
 	}
 
 
-	attRow = 0;
+	attRow = -1;
+	dmaEntriesLeft = SGDMA_NUM_DESCRIPTORS;
 	for_each_sg(sgList, sgEntry, numDMAs, ct){
-		//Write the address translation table
+
+		dmaEntriesLeft -= 1;
+		if(dmaEntriesLeft == 0){
+			dev_dbg(&devInfo->pciDev->dev, "Rechecking how many descriptors we can write.");
+			dmaEntriesLeft = SGDMA_NUM_DESCRIPTORS - ioread16(devInfo->bar[SGDMA_BAR] + SGDMA_CSR_ADDR + 0xA);
+			dev_dbg(&devInfo->pciDev->dev, "%d descriptors available to fill", dmaEntriesLeft);
+			while (dmaEntriesLeft == 0){
+				udelay(10);
+				dmaEntriesLeft = SGDMA_NUM_DESCRIPTORS - ioread16(devInfo->bar[SGDMA_BAR] + SGDMA_CSR_ADDR + 0xA);
+			}
+			dev_dbg(&devInfo->pciDev->dev, "%d descriptors available to fill", dmaEntriesLeft);
+		} 
+		//Write the address translation table if necessary
 		pciAddr = sg_dma_address(sgEntry);
-     	// +1 to set LSB for 64bit addresses
-		dev_dbg(&devInfo->pciDev->dev, "Writing ATT entry for DMA transfer %d using pciAddr = %llx", ct, pciAddr);
-		iowrite32(pciAddr & 0xFFF00000, devInfo->bar[PCIE_CRA_BAR] + PCIE_CRA_OFFSET + ATT_CRA_OFFSET + 8*attRow);
-		// iowrite32(pciAddr >> 32, devInfo->bar[PCIE_CRA_BAR] + PCIE_CRA_OFFSET + ATT_CRA_OFFSET + 8*attRow + 4);
+
+		//See if we need to write another ATT entry
+		if ( (pciAddr < pciAddr_prev) || (pciAddr - pciAddr_prev) > 0xFFFFF) {
+		      attRow++;
+		      //TODO: be more careful about clobbering old entries
+		      //Roll over at number of ATT entries
+		      if (attRow == PCIE_NUM_ATT_ENTRIES){
+		              attRow = 0;
+		      }
+		      pciAddr_prev = pciAddr;
+		      dev_dbg(&devInfo->pciDev->dev, "Writing ATT entry %d using pciAddr = %llx", attRow, pciAddr);
+		      if (is64bit) {
+		      // +1 to set LSB for 64bit addresses
+		              pciAddr += 1;
+		              iowrite32(pciAddr & 0xFFF00000, devInfo->bar[PCIE_CRA_BAR] + PCIE_CRA_OFFSET + ATT_CRA_OFFSET + 8*attRow);
+		              iowrite32(pciAddr >> 32, devInfo->bar[PCIE_CRA_BAR] + PCIE_CRA_OFFSET + ATT_CRA_OFFSET + 8*attRow + 4);
+		      }
+		      else{
+		              iowrite32(pciAddr & 0xFFF00000, devInfo->bar[PCIE_CRA_BAR] + PCIE_CRA_OFFSET + ATT_CRA_OFFSET + 8*attRow);
+		      }
+		}
 
 		//Write the DMA descriptor
 		//write address (each ATT entry addresses up to 1MB)
@@ -92,7 +124,6 @@ int dma_read(char __user * buf, size_t count, struct DevInfo_t * devInfo){
 		iowrite32(dmaLength, devInfo->bar[SGDMA_BAR] + SGDMA_DESCRIPTOR_ADDR + 8);
 		//write control word
 		iowrite32(DESCRIPTOR_CONTROL_GO_MASK | DESCRIPTOR_CONTROL_END_ON_EOP_MASK, devInfo->bar[SGDMA_BAR] + SGDMA_DESCRIPTOR_ADDR + 12);
-		attRow++;
 	}
 
 	//Wait until finished
@@ -101,23 +132,20 @@ int dma_read(char __user * buf, size_t count, struct DevInfo_t * devInfo){
 	dev_dbg(&devInfo->pciDev->dev, "Got DMA status 0x%x", dmaStatus);
 	while((dmaStatus & 0x1)){
 		// dev_dbg(&devInfo->pciDev->dev, "Waiting for reads to finish with dmaStatus = 0x%x.", dmaStatus);
+		udelay(10);
 		dmaStatus = ioread32(devInfo->bar[SGDMA_BAR] + SGDMA_CSR_ADDR);
 	}
-	dev_dbg(&devInfo->pciDev->dev, "Getting DMA status register");
-	dmaStatus = ioread32(devInfo->bar[SGDMA_BAR] + SGDMA_CSR_ADDR);
-	dev_dbg(&devInfo->pciDev->dev, "Got DMA status 0x%x", dmaStatus);
 
 	//Read the response registers
-	dmaResponseLevel = ioread16(devInfo->bar[SGDMA_BAR] + SGDMA_CSR_ADDR + 0XC);
-	dev_dbg(&devInfo->pciDev->dev, "DMA response level = %d", dmaResponseLevel);
-	while ( dmaResponseLevel > 0) {
-		dmaStatus = ioread32(devInfo->bar[SGDMA_BAR] + SGDMA_RESPONSE_ADDR);
-		dev_dbg(&devInfo->pciDev->dev, "DMA response bytes transferred = 0x%x", dmaStatus);
-		dmaStatus = ioread32(devInfo->bar[SGDMA_BAR] + SGDMA_RESPONSE_ADDR + 4);
-		dev_dbg(&devInfo->pciDev->dev, "DMA response error = 0x%x", dmaStatus);
-		dmaResponseLevel = ioread16(devInfo->bar[SGDMA_BAR] + SGDMA_CSR_ADDR + 0XC);
-	}
-
+	// dmaResponseLevel = ioread16(devInfo->bar[SGDMA_BAR] + SGDMA_CSR_ADDR + 0XC);
+	// dev_dbg(&devInfo->pciDev->dev, "DMA response level = %d", dmaResponseLevel);
+	// while ( dmaResponseLevel > 0) {
+	// 	dmaStatus = ioread32(devInfo->bar[SGDMA_BAR] + SGDMA_RESPONSE_ADDR);
+	// 	dev_dbg(&devInfo->pciDev->dev, "DMA response bytes transferred = 0x%x", dmaStatus);
+	// 	dmaStatus = ioread32(devInfo->bar[SGDMA_BAR] + SGDMA_RESPONSE_ADDR + 4);
+	// 	dev_dbg(&devInfo->pciDev->dev, "DMA response error = 0x%x", dmaStatus);
+	// 	dmaResponseLevel = ioread16(devInfo->bar[SGDMA_BAR] + SGDMA_CSR_ADDR + 0XC);
+	// }
 
 	dev_dbg(&devInfo->pciDev->dev, "Unmapping the SG list");
 	pci_unmap_sg(devInfo->pciDev, sgList, numPages, DMA_FROM_DEVICE);
