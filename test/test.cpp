@@ -117,23 +117,25 @@ bool test_long_write(int FID){
 	return success;
 }
 
-bool test_dma_stream(int FID){
+bool test_dma_stream(int FID, int numBytes){
 
 	bool success = true;
 	IOCmd_t iocmd = {1,0,0,0};
 
 	//Allocate some aligned memory
-	posix_memalign(&iocmd.userAddr, 4096, 32768);
+	posix_memalign(&iocmd.userAddr, 4096, numBytes);
 
     auto start = std::chrono::steady_clock::now();
 
-	read(FID, &iocmd, 32768);
+	read(FID, &iocmd, numBytes);
 
-	vector<uint32_t> testVec(static_cast<uint32_t*>(iocmd.userAddr), static_cast<uint32_t*>(iocmd.userAddr)+32768/4) ;
+	vector<uint32_t> testVec(static_cast<uint32_t*>(iocmd.userAddr), static_cast<uint32_t*>(iocmd.userAddr)+numBytes/4) ;
 
     auto end = std::chrono::steady_clock::now();
 
-    cout << "DMA Reading 32kB took " << std::chrono::duration_cast<std::chrono::microseconds>(end-start).count() << " us" << endl;
+    auto timeCount = std::chrono::duration_cast<std::chrono::microseconds>(end-start).count();
+
+    cout << "DMA Reading: " << numBytes/1024 << " kB took " << timeCount << " us for a transfer speed of " << numBytes/static_cast<double>(timeCount) << " MB/s" << endl;
 
 	// for(auto val : testVec){
 	// 	cout << std::hex << val << endl;
@@ -168,7 +170,7 @@ int main(int argc, char const *argv[])
 		cout << "Successfully tested long write/read." << endl;
 	}
 
-	testResult = test_dma_stream(FID);
+	testResult = test_dma_stream(FID, 2048*1024);
 	
 	close(FID);
 
