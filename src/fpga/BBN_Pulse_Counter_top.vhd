@@ -45,11 +45,12 @@ signal csrReadData, csrWriteData : std_logic_vector(31 downto 0) := (others => '
 signal csrAddr : unsigned(4 downto 0) := (others => '0') ;
 signal csrWE : std_logic := '0';
 
-signal controlWord : std_logic_vector(31 downto 0) ;
+signal controlWord, ledRate, clkCount : std_logic_vector(31 downto 0) ;
 
 --Pulse counts
 type PulseCountArray_t is array(0 to 15) of unsigned(31 downto 0) ;
 signal pulseCounts : PulseCountArray_t := (others => (others => '0'));
+signal fakePulses : std_logic_vector(3 downto 0) ;
 
 begin
 
@@ -132,6 +133,7 @@ begin
  		csrAddr <= (others => '0');
  		csrWE <= '0';
  		controlWord <= (others => '0');
+ 		ledRate <= (others => '0');
  	elsif rising_edge(clk_100Mhz) then
 
  		csrAddr <= csrAddr + 1;
@@ -146,17 +148,28 @@ begin
  		if (csrAddr = b"00001") then
  			controlWord <= csrReadData;
  		end if;
+ 		if (csrAddr = b"00010") then
+ 			ledRate <= csrReadData;
+ 		end if;
+ 		if (csrAddr = b"00011") then
+ 			clkCount <= csrReadData;
+ 		end if;
 	 		
 	end if;
 
 end process ; -- csr
 
-
-leds <= not controlWord(3 downto 0);
-
 --Count pulses coming in 
-
-
+genCounters: for ct in 0 to 3 generate
+	counter : entity work.PulseCounter
+		port map(
+			reset => not resetn,
+			clk => clk_100MHz,
+			clkCount => clkCount,
+			pulseLine => fakePulses(ct),
+			unsigned(pulseCount) => pulseCounts(ct)
+		);
+end generate genCounters;
 
 --Mock up data streaming in as a counter for now
 fakeData : process( resetn, clk_100MHz )
@@ -171,35 +184,36 @@ begin
 	end if;
 end process ; -- fakeData
 
-pulseCounts(0) <= x"BAADF00F";
-pulseCounts(1) <= x"BAADF11F";
-pulseCounts(2) <= x"BAADF22F";
-pulseCounts(3) <= x"BAADF33F";
-pulseCounts(4) <= x"BAADF44F";
+pulseCounts(8) <= x"BAADF00F";
+pulseCounts(9) <= x"BAADF11F";
+pulseCounts(10) <= x"BAADF22F";
+pulseCounts(11) <= x"BAADF33F";
+pulseCounts(12) <= x"BAADF44F";
 
 --For now put a slow counter out on the LEDS so we know the board alive
 
--- countpro : process( resetn, clk_100MHz )
+countpro : process( resetn, clk_100MHz )
 
--- variable counter : unsigned(31 downto 0) := (others => '0');
--- variable slowCounter : unsigned(3 downto 0) := (others => '0');
+variable counter : unsigned(31 downto 0) := (others => '0');
+variable slowCounter : unsigned(3 downto 0) := (others => '0');
 
--- begin
--- 	leds <= not std_logic_vector(slowCounter);
--- 	if resetn = '0' then
--- 		counter := (others => '0');
--- 		slowCounter := (others => '0');
--- 	elsif rising_edge(clk_100MHz) then
--- 		if (counter < unsigned(controlWord)) then
--- 			counter := counter + 1;
--- 		else
--- 			counter := (others => '0');
--- 		end if;
--- 		if counter = 0 then
--- 			slowCounter := slowCounter + 1;
--- 		end if;
--- 	end if;
--- end process ; -- counter
+begin
+	leds <= not std_logic_vector(slowCounter);
+	fakePulses <= std_logic_vector(slowCounter);
+	if resetn = '0' then
+		counter := (others => '0');
+		slowCounter := (others => '0');
+	elsif rising_edge(clk_100MHz) then
+		if (counter < unsigned(ledRate)) then
+			counter := counter + 1;
+		else
+			counter := (others => '0');
+		end if;
+		if counter = 0 then
+			slowCounter := slowCounter + 1;
+		end if;
+	end if;
+end process ; -- counter
 
 
 

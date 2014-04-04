@@ -7,3 +7,4 @@ incremental_db
 db
 .qsys_edit
 BBN_Pulse_Counter.qws
+*.bak
