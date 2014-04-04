@@ -42,7 +42,7 @@ signal data_in_ready              : std_logic                     := '0';
 
 --CSR signals
 signal csrReadData, csrWriteData : std_logic_vector(31 downto 0) := (others => '0');
-signal csrAddr : unsigned(5 downto 0) := (others => '0') ;
+signal csrAddr : unsigned(4 downto 0) := (others => '0') ;
 signal csrWE : std_logic := '0';
 
 signal controlWord : std_logic_vector(31 downto 0) ;
@@ -112,7 +112,7 @@ qsys : entity streaming_sgdma.streaming_sgdma
 
         --On chip memory as poor-man's CSR
         onchip_memory2_0_clk2_clk => clk_100MHz,
-        onchip_memory2_0_s2_address => x"00" & std_logic_vector(csrAddr),
+        onchip_memory2_0_s2_address => x"00" & '0' & std_logic_vector(csrAddr),
         onchip_memory2_0_s2_chipselect => '1',
         onchip_memory2_0_s2_clken => pllLocked,
         onchip_memory2_0_s2_write => csrWE,
@@ -125,76 +125,33 @@ qsys : entity streaming_sgdma.streaming_sgdma
 
 
 --Poor man's CSR, scan through first 32 words 
--- csr : process( resetn, clk_100Mhz )
-
--- begin
--- 	if resetn = '0' then
--- 		csrWriteData <= (others => '0');
--- 		csrAddr <= (others => '0');
--- 		csrWE <= '0';
--- 		controlWord <= (others => '0');
--- 	elsif rising_edge(clk_100MHz) then
--- 		if (csrAddr >= to_unsigned(31, 14)) then
--- 			csrAddr <= (others => '0');
--- 		else
--- 			csrAddr <= csrAddr + 1;
--- 		end if;
-
--- 		if (csrAddr < 16) then
--- 			--Reading
--- 			csrWE <= '0';
--- 			case( csrAddr(4 downto 0) ) is
-			
--- 				when b"00001" =>
--- 					controlWord <= csrReadData;
--- 				when others =>
--- 					null;
--- 			end case ;
--- 		else
--- 			--Writing
--- 			csrWE <= '1';
--- 			csrWriteData <= std_logic_vector(pulseCounts(to_integer(csrAddr - 16)));
--- 		end if;		
--- 	end if;
--- end process ; -- csr
-
-
 csr : process( resetn, clk_100MHz )
 begin
 	if resetn = '0' then
  		csrWriteData <= (others => '0');
  		csrAddr <= (others => '0');
  		csrWE <= '0';
- 		controlWord <= (others => '1');
+ 		controlWord <= (others => '0');
  	elsif rising_edge(clk_100Mhz) then
 
  		csrAddr <= csrAddr + 1;
 
- 		if (csrAddr < 16) then 
+ 		if (csrAddr < 15) or (csrAddr = 31) then 
 	 		csrWE <= '0';
-	 		if (csrAddr = b"00110") then
-	 			controlWord <= csrReadData;
-	 		end if;
 	 	else
-			csrWE <= '1';
-			csrWriteData <= std_logic_vector(pulseCounts(to_integer(csrAddr - 16)));
-		end if;
+	 		csrWE <= '1';
+			csrWriteData <= std_logic_vector(pulseCounts(to_integer(csrAddr - 15)));
+	 	end if;
+ 	
+ 		if (csrAddr = b"00001") then
+ 			controlWord <= csrReadData;
+ 		end if;
 	 		
 	end if;
 
 end process ; -- csr
 
 
--- 0 - 0 
--- 1 - 4
--- 2 - 8
--- 3 - C  -- with variable come out here
--- 4 - 10
--- 5 - 14 -- with signal comes out here
--- 6 - 1C
-
--- csrWriteData <= (others => '0');
--- csrAddr <= (others => '0');
 leds <= not controlWord(3 downto 0);
 
 --Count pulses coming in 
