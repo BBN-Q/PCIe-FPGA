@@ -1,0 +1,448 @@
+# -------------------------------------------------------------------------- #
+#
+# Copyright (C) 1991-2013 Altera Corporation
+# Your use of Altera Corporation's design tools, logic functions
+# and other software and tools, and its AMPP partner logic
+# functions, and any output files from any of the foregoing
+# (including device programming or simulation files), and any
+# associated documentation or information are expressly subject
+# to the terms and conditions of the Altera Program License
+# Subscription Agreement, Altera MegaCore Function License
+# Agreement, or other applicable license agreement, including,
+# without limitation, that your use is for the sole purpose of
+# programming logic devices manufactured by Altera and sold by
+# Altera or its authorized distributors.  Please refer to the
+# applicable agreement for further details.
+#
+# -------------------------------------------------------------------------- #
+#
+# Quartus II 64-Bit
+# Version 13.1.0 Build 162 10/23/2013 SJ Full Version
+# Date created = 18:10:41  April 03, 2014
+#
+# -------------------------------------------------------------------------- #
+#
+# Notes:
+#
+# 1) The default values for assignments are stored in the file:
+#		BBN_Pulse_Counter_assignment_defaults.qdf
+#    If this file doesn't exist, see file:
+#		assignment_defaults.qdf
+#
+# 2) Altera recommends that you do not modify this file. This
+#    file is updated automatically by the Quartus II software
+#    and any changes you make may be lost or overwritten.
+#
+# -------------------------------------------------------------------------- #
+
+
+
+# Project-Wide Assignments
+# ========================
+set_global_assignment -name ORIGINAL_QUARTUS_VERSION 13.1
+set_global_assignment -name PROJECT_CREATION_TIME_DATE "18:12:08  APRIL 03, 2014"
+set_global_assignment -name LAST_QUARTUS_VERSION 13.1
+set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
+
+# Pin & Location Assignments
+# ==========================
+set_location_assignment PIN_AJ19 -to clk_bot
+set_location_assignment PIN_R5 -to leds[3]
+set_location_assignment PIN_J5 -to leds[2]
+set_location_assignment PIN_J4 -to leds[1]
+set_location_assignment PIN_G1 -to leds[0]
+set_location_assignment PIN_N1 -to pcie_rstn
+set_location_assignment PIN_AE29 -to refclk
+set_location_assignment PIN_AK9 -to resetn
+set_location_assignment PIN_AN33 -to rx_in0
+set_location_assignment PIN_AL33 -to rx_in1
+set_location_assignment PIN_AJ33 -to rx_in2
+set_location_assignment PIN_AG33 -to rx_in3
+set_location_assignment PIN_AM31 -to tx_out0
+set_location_assignment PIN_AK31 -to tx_out1
+set_location_assignment PIN_AH31 -to tx_out2
+set_location_assignment PIN_AF31 -to tx_out3
+set_location_assignment PIN_AK19 -to "clk_bot(n)"
+set_location_assignment PIN_AE30 -to "refclk(n)"
+set_location_assignment PIN_AN34 -to "rx_in0(n)"
+set_location_assignment PIN_AL34 -to "rx_in1(n)"
+set_location_assignment PIN_AJ34 -to "rx_in2(n)"
+set_location_assignment PIN_AG34 -to "rx_in3(n)"
+set_location_assignment PIN_AM32 -to "tx_out0(n)"
+set_location_assignment PIN_AK32 -to "tx_out1(n)"
+set_location_assignment PIN_AH32 -to "tx_out2(n)"
+set_location_assignment PIN_AF32 -to "tx_out3(n)"
+
+# Classic Timing Assignments
+# ==========================
+set_global_assignment -name MIN_CORE_JUNCTION_TEMP 0
+set_global_assignment -name MAX_CORE_JUNCTION_TEMP 85
+
+# Analysis & Synthesis Assignments
+# ================================
+set_global_assignment -name FAMILY "Arria II GX"
+set_global_assignment -name TOP_LEVEL_ENTITY BBN_Pulse_Counter_top
+set_global_assignment -name DEVICE_FILTER_PIN_COUNT 1152
+set_global_assignment -name DEVICE_FILTER_SPEED_GRADE 4
+
+# Fitter Assignments
+# ==================
+set_global_assignment -name DEVICE EP2AGX125EF35C4
+set_global_assignment -name ERROR_CHECK_FREQUENCY_DIVISOR 2
+set_global_assignment -name STRATIX_DEVICE_IO_STANDARD "2.5 V"
+
+# EDA Netlist Writer Assignments
+# ==============================
+set_global_assignment -name EDA_SIMULATION_TOOL "ModelSim-Altera (VHDL)"
+
+# Power Estimation Assignments
+# ============================
+set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "23 MM HEAT SINK WITH 200 LFPM AIRFLOW"
+set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
+
+# start EDA_TOOL_SETTINGS(eda_simulation)
+# ---------------------------------------
+
+# EDA Netlist Writer Assignments
+# ==============================
+set_global_assignment -name EDA_OUTPUT_DATA_FORMAT VHDL -section_id eda_simulation
+
+# end EDA_TOOL_SETTINGS(eda_simulation)
+# -------------------------------------
+
+# ----------------------------
+# start ENTITY(PCIe_Test2_top)
+
+# Fitter Assignments
+# ==================
+
+# start DESIGN_PARTITION(Top)
+# ---------------------------
+
+# Incremental Compilation Assignments
+# ===================================
+
+# end DESIGN_PARTITION(Top)
+# -------------------------
+
+# end ENTITY(PCIe_Test2_top)
+# --------------------------
+
+# -----------------------------------
+# start ENTITY(altera_avalon_dc_fifo)
+
+# Project-Wide Assignments
+# ========================
+
+# end ENTITY(altera_avalon_dc_fifo)
+# ---------------------------------
+
+# -----------------------------------
+# start ENTITY(altera_avalon_sc_fifo)
+
+# Project-Wide Assignments
+# ========================
+
+# end ENTITY(altera_avalon_sc_fifo)
+# ---------------------------------
+
+# ---------------------------------------------
+# start ENTITY(altera_avalon_st_pipeline_stage)
+
+# Project-Wide Assignments
+# ========================
+
+# end ENTITY(altera_avalon_st_pipeline_stage)
+# -------------------------------------------
+
+# -----------------------------------------
+# start ENTITY(altera_merlin_burst_adapter)
+
+# Project-Wide Assignments
+# ========================
+
+# end ENTITY(altera_merlin_burst_adapter)
+# ---------------------------------------
+
+# ----------------------------------------
+# start ENTITY(altera_merlin_master_agent)
+
+# Project-Wide Assignments
+# ========================
+
+# end ENTITY(altera_merlin_master_agent)
+# --------------------------------------
+
+# ---------------------------------------------
+# start ENTITY(altera_merlin_master_translator)
+
+# Project-Wide Assignments
+# ========================
+
+# end ENTITY(altera_merlin_master_translator)
+# -------------------------------------------
+
+# ---------------------------------------
+# start ENTITY(altera_merlin_slave_agent)
+
+# Project-Wide Assignments
+# ========================
+
+# end ENTITY(altera_merlin_slave_agent)
+# -------------------------------------
+
+# --------------------------------------------
+# start ENTITY(altera_merlin_slave_translator)
+
+# Project-Wide Assignments
+# ========================
+
+# end ENTITY(altera_merlin_slave_translator)
+# ------------------------------------------
+
+# -------------------------------------------
+# start ENTITY(altera_merlin_traffic_limiter)
+
+# Project-Wide Assignments
+# ========================
+
+# end ENTITY(altera_merlin_traffic_limiter)
+# -----------------------------------------
+
+# -----------------------------------------
+# start ENTITY(altera_merlin_width_adapter)
+
+# Project-Wide Assignments
+# ========================
+
+# end ENTITY(altera_merlin_width_adapter)
+# ---------------------------------------
+
+# -------------------------------------
+# start ENTITY(altera_reset_controller)
+
+# Project-Wide Assignments
+# ========================
+
+# end ENTITY(altera_reset_controller)
+# -----------------------------------
+
+# -----------------------------
+# start ENTITY(pcie_test2_qsys)
+
+# Project-Wide Assignments
+# ========================
+
+# SignalTap II Assignments
+# ========================
+
+# end ENTITY(pcie_test2_qsys)
+# ---------------------------
+
+# -----------------------------------------------
+# start ENTITY(pcie_test2_qsys_avalon_st_adapter)
+
+# Project-Wide Assignments
+# ========================
+
+# end ENTITY(pcie_test2_qsys_avalon_st_adapter)
+# ---------------------------------------------
+
+# ---------------------------------------------------------------------
+# start ENTITY(pcie_test2_qsys_avalon_st_adapter_data_format_adapter_0)
+
+# Project-Wide Assignments
+# ========================
+
+# end ENTITY(pcie_test2_qsys_avalon_st_adapter_data_format_adapter_0)
+# -------------------------------------------------------------------
+
+# ----------------------------------------
+# start ENTITY(pcie_test2_qsys_irq_mapper)
+
+# Project-Wide Assignments
+# ========================
+
+# end ENTITY(pcie_test2_qsys_irq_mapper)
+# --------------------------------------
+
+# -----------------------------------------------
+# start ENTITY(pcie_test2_qsys_mm_interconnect_0)
+
+# Project-Wide Assignments
+# ========================
+
+# end ENTITY(pcie_test2_qsys_mm_interconnect_0)
+# ---------------------------------------------
+
+# -----------------------------------------------------------
+# start ENTITY(pcie_test2_qsys_mm_interconnect_0_addr_router)
+
+# Project-Wide Assignments
+# ========================
+
+# end ENTITY(pcie_test2_qsys_mm_interconnect_0_addr_router)
+# ---------------------------------------------------------
+
+# --------------------------------------------------------------
+# start ENTITY(pcie_test2_qsys_mm_interconnect_0_cmd_xbar_demux)
+
+# Project-Wide Assignments
+# ========================
+
+# end ENTITY(pcie_test2_qsys_mm_interconnect_0_cmd_xbar_demux)
+# ------------------------------------------------------------
+
+# ------------------------------------------------------------
+# start ENTITY(pcie_test2_qsys_mm_interconnect_0_cmd_xbar_mux)
+
+# Project-Wide Assignments
+# ========================
+
+# end ENTITY(pcie_test2_qsys_mm_interconnect_0_cmd_xbar_mux)
+# ----------------------------------------------------------
+
+# ---------------------------------------------------------
+# start ENTITY(pcie_test2_qsys_mm_interconnect_0_id_router)
+
+# Project-Wide Assignments
+# ========================
+
+# end ENTITY(pcie_test2_qsys_mm_interconnect_0_id_router)
+# -------------------------------------------------------
+
+# ------------------------------------------------------------
+# start ENTITY(pcie_test2_qsys_mm_interconnect_0_rsp_xbar_mux)
+
+# Project-Wide Assignments
+# ========================
+
+# end ENTITY(pcie_test2_qsys_mm_interconnect_0_rsp_xbar_mux)
+# ----------------------------------------------------------
+
+# -----------------------------------------------
+# start ENTITY(pcie_test2_qsys_mm_interconnect_1)
+
+# Project-Wide Assignments
+# ========================
+
+# end ENTITY(pcie_test2_qsys_mm_interconnect_1)
+# ---------------------------------------------
+
+# -----------------------------------------------------------
+# start ENTITY(pcie_test2_qsys_mm_interconnect_1_addr_router)
+
+# Project-Wide Assignments
+# ========================
+
+# end ENTITY(pcie_test2_qsys_mm_interconnect_1_addr_router)
+# ---------------------------------------------------------
+
+# --------------------------------------------------------------
+# start ENTITY(pcie_test2_qsys_mm_interconnect_1_cmd_xbar_demux)
+
+# Project-Wide Assignments
+# ========================
+
+# end ENTITY(pcie_test2_qsys_mm_interconnect_1_cmd_xbar_demux)
+# ------------------------------------------------------------
+
+# ------------------------------------------------------------
+# start ENTITY(pcie_test2_qsys_mm_interconnect_1_cmd_xbar_mux)
+
+# Project-Wide Assignments
+# ========================
+
+# end ENTITY(pcie_test2_qsys_mm_interconnect_1_cmd_xbar_mux)
+# ----------------------------------------------------------
+
+# ---------------------------------------------------------
+# start ENTITY(pcie_test2_qsys_mm_interconnect_1_id_router)
+
+# Project-Wide Assignments
+# ========================
+
+# end ENTITY(pcie_test2_qsys_mm_interconnect_1_id_router)
+# -------------------------------------------------------
+
+# -------------------------------------------------------------
+# start ENTITY(pcie_test2_qsys_mm_interconnect_1_id_router_002)
+
+# Project-Wide Assignments
+# ========================
+
+# end ENTITY(pcie_test2_qsys_mm_interconnect_1_id_router_002)
+# -----------------------------------------------------------
+
+# --------------------------------------------------------------
+# start ENTITY(pcie_test2_qsys_mm_interconnect_1_rsp_xbar_demux)
+
+# Project-Wide Assignments
+# ========================
+
+# end ENTITY(pcie_test2_qsys_mm_interconnect_1_rsp_xbar_demux)
+# ------------------------------------------------------------
+
+# ------------------------------------------------------------
+# start ENTITY(pcie_test2_qsys_mm_interconnect_1_rsp_xbar_mux)
+
+# Project-Wide Assignments
+# ========================
+
+# end ENTITY(pcie_test2_qsys_mm_interconnect_1_rsp_xbar_mux)
+# ----------------------------------------------------------
+
+# -----------------------------------------------
+# start ENTITY(pcie_test2_qsys_mm_interconnect_2)
+
+# Project-Wide Assignments
+# ========================
+
+# end ENTITY(pcie_test2_qsys_mm_interconnect_2)
+# ---------------------------------------------
+
+# ----------------------------------------------
+# start ENTITY(pcie_test2_qsys_onchip_memory2_0)
+
+# Project-Wide Assignments
+# ========================
+
+# end ENTITY(pcie_test2_qsys_onchip_memory2_0)
+# --------------------------------------------
+
+# --------------------------------------------
+# start ENTITY(pcie_test2_qsys_pcie_hard_ip_0)
+
+# Project-Wide Assignments
+# ========================
+
+# end ENTITY(pcie_test2_qsys_pcie_hard_ip_0)
+# ------------------------------------------
+set_global_assignment -name SDC_FILE streaming_sgdma/synthesis/submodules/altera_pci_express.sdc
+set_global_assignment -name QIP_FILE streaming_sgdma/synthesis/streaming_sgdma.qip
+set_global_assignment -name VHDL_FILE BBN_Pulse_Counter_top.vhd
+set_global_assignment -name QIP_FILE MyALTPLL.qip
+set_global_assignment -name QIP_FILE MyALTGX_RECONFIG.qip
+set_global_assignment -name CDF_FILE output_files/Chain1.cdf
+set_global_assignment -name SEARCH_PATH "/home/qlab/Repos/PCIe-FPGA/src/fpga/streaming_sgdma/synthesis/submodules"
+set_global_assignment -name SEARCH_PATH "/home/qlab/Repos/PCIe-FPGA/src/fpga/streaming_sgdma/synthesis"
+set_global_assignment -name PARTITION_NETLIST_TYPE POST_FIT -section_id Top
+set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
+set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
+set_instance_assignment -name IO_STANDARD LVDS -to clk_bot
+set_instance_assignment -name IO_STANDARD "2.5 V" -to leds[3]
+set_instance_assignment -name IO_STANDARD "2.5 V" -to leds[2]
+set_instance_assignment -name IO_STANDARD "2.5 V" -to leds[1]
+set_instance_assignment -name IO_STANDARD "2.5 V" -to leds[0]
+set_instance_assignment -name IO_STANDARD "3.0-V LVTTL" -to pcie_rstn
+set_instance_assignment -name IO_STANDARD HCSL -to refclk
+set_instance_assignment -name IO_STANDARD "1.8 V" -to resetn
+set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to rx_in0
+set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to rx_in1
+set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to rx_in2
+set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to rx_in3
+set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to tx_out0
+set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to tx_out1
+set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to tx_out2
+set_instance_assignment -name IO_STANDARD "1.5-V PCML" -to tx_out3
+set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
