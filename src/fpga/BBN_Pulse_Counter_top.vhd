@@ -6,22 +6,27 @@ library streaming_sgdma;
 use streaming_sgdma.streaming_sgdma;
 
 entity BBN_Pulse_Counter_top is
-  port (
-	resetn : in std_logic; --push button reset USER_PB0
-	clk_bot : in std_logic; -- 100MHz CLKIN_BOT_P
-	leds : out std_logic_vector(3 downto 0); --leds for status	
+	port (
+		resetn : in std_logic; --push button reset USER_PB0
+		clk_bot : in std_logic; -- 100MHz CLKIN_BOT_P
+		leds : out std_logic_vector(3 downto 0); --leds for status	
 
-	--PCIe signals
-	pcie_rstn : in std_logic;
-	refclk : in std_logic;
-	rx_in0 : in std_logic;
-	rx_in1 : in std_logic;
-	rx_in2 : in std_logic;
-	rx_in3 : in std_logic;
-	tx_out0 : out std_logic;
-	tx_out1 : out std_logic;
-	tx_out2 : out std_logic;
-	tx_out3 : out std_logic  ) ;
+		--PCIe signals
+		pcie_rstn : in std_logic;
+		refclk : in std_logic;
+		rx_in0 : in std_logic;
+		rx_in1 : in std_logic;
+		rx_in2 : in std_logic;
+		rx_in3 : in std_logic;
+		tx_out0 : out std_logic;
+		tx_out1 : out std_logic;
+		tx_out2 : out std_logic;
+		tx_out3 : out std_logic;
+
+		--HSMC lines for pulse counting
+		pulseInputs : in std_logic_vector(15 downto 0) 
+	) ;
+
 end entity ; -- BBN_Pulse_Counter_top
 
 architecture arch of BBN_Pulse_Counter_top is
@@ -170,6 +175,19 @@ genCounters: for ct in 0 to 3 generate
 			unsigned(pulseCount) => pulseCounts(ct)
 		);
 end generate genCounters;
+
+
+genCountersBis: for ct in 4 to 7 generate
+	counterBis : entity work.PulseCounter
+		port map(
+			reset => not resetn,
+			clk => clk_100MHz,
+			clkCount => clkCount,
+			pulseLine => pulseInputs(ct),
+			unsigned(pulseCount) => pulseCounts(ct)
+		);
+end generate genCountersBis;
+
 
 --Mock up data streaming in as a counter for now
 fakeData : process( resetn, clk_100MHz )
