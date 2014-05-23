@@ -33,12 +33,12 @@
          type = "String";
       }
    }
-   element modular_sgdma_dispatcher_0.Response_Slave
+   element clock_bridge_0
    {
-      datum baseAddress
+      datum _sortIndex
       {
-         value = "16432";
-         type = "String";
+         value = "6";
+         type = "int";
       }
    }
    element pcie_hard_ip_0.cra
@@ -86,6 +86,14 @@
       datum _sortIndex
       {
          value = "0";
+         type = "int";
+      }
+   }
+   element reset_bridge_0
+   {
+      datum _sortIndex
+      {
+         value = "5";
          type = "int";
       }
    }
@@ -193,17 +201,6 @@
    internal="pcie_hard_ip_0.fixedclk"
    type="clock"
    dir="end" />
- <interface name="data_in_clk" internal="dc_fifo_0.in_clk" type="clock" dir="end" />
- <interface
-   name="data_in_clk_reset"
-   internal="dc_fifo_0.in_clk_reset"
-   type="reset"
-   dir="end" />
- <interface
-   name="data_in"
-   internal="dc_fifo_0.in"
-   type="avalon_streaming"
-   dir="end" />
  <interface
    name="onchip_memory2_0_clk2"
    internal="onchip_memory2_0.clk2"
@@ -218,6 +215,21 @@
    name="onchip_memory2_0_reset2"
    internal="onchip_memory2_0.reset2"
    type="reset"
+   dir="end" />
+ <interface
+   name="data_in"
+   internal="dc_fifo_0.in"
+   type="avalon_streaming"
+   dir="end" />
+ <interface
+   name="reset_bridge_0_in_reset"
+   internal="reset_bridge_0.in_reset"
+   type="reset"
+   dir="end" />
+ <interface
+   name="clock_bridge_0_in_clk"
+   internal="clock_bridge_0.in_clk"
+   type="clock"
    dir="end" />
  <module
    kind="altera_pcie_hard_ip"
@@ -339,8 +351,8 @@
   <parameter name="SLAVE_ADDRESS_MAP_5_4" value="0" />
   <parameter name="deviceFamily" value="Arria II GX" />
   <parameter name="AUTO_CAL_BLK_CLK_CLOCK_RATE" value="0" />
-  <parameter name="AUTO_CAL_BLK_CLK_CLOCK_DOMAIN" value="5" />
-  <parameter name="AUTO_CAL_BLK_CLK_RESET_DOMAIN" value="5" />
+  <parameter name="AUTO_CAL_BLK_CLK_CLOCK_DOMAIN" value="4" />
+  <parameter name="AUTO_CAL_BLK_CLK_RESET_DOMAIN" value="4" />
   <parameter name="AUTO_DEVICE" value="EP2AGX125EF35C4" />
  </module>
  <module
@@ -349,7 +361,7 @@
    enabled="1"
    name="modular_sgdma_dispatcher_0">
   <parameter name="MODE" value="2" />
-  <parameter name="GUI_RESPONSE_PORT" value="0" />
+  <parameter name="GUI_RESPONSE_PORT" value="2" />
   <parameter name="DESCRIPTOR_FIFO_DEPTH" value="128" />
   <parameter name="ENHANCED_FEATURES" value="0" />
   <parameter name="CSR_ADDRESS_WIDTH" value="3" />
@@ -362,12 +374,12 @@
    enabled="1"
    name="dma_write_master_0">
   <parameter name="DATA_WIDTH" value="64" />
-  <parameter name="LENGTH_WIDTH" value="16" />
+  <parameter name="LENGTH_WIDTH" value="21" />
   <parameter name="FIFO_DEPTH" value="256" />
   <parameter name="STRIDE_ENABLE" value="0" />
   <parameter name="GUI_STRIDE_WIDTH" value="1" />
   <parameter name="BURST_ENABLE" value="1" />
-  <parameter name="GUI_MAX_BURST_COUNT" value="64" />
+  <parameter name="GUI_MAX_BURST_COUNT" value="32" />
   <parameter name="GUI_PROGRAMMABLE_BURST_ENABLE" value="0" />
   <parameter name="GUI_BURST_WRAPPING_SUPPORT" value="0" />
   <parameter name="TRANSFER_TYPE">Full Word Accesses Only</parameter>
@@ -411,7 +423,7 @@
    version="13.1"
    enabled="1"
    name="dc_fifo_0">
-  <parameter name="SYMBOLS_PER_BEAT" value="4" />
+  <parameter name="SYMBOLS_PER_BEAT" value="2" />
   <parameter name="BITS_PER_SYMBOL" value="8" />
   <parameter name="FIFO_DEPTH" value="256" />
   <parameter name="CHANNEL_WIDTH" value="0" />
@@ -424,6 +436,25 @@
   <parameter name="ENABLE_EXPLICIT_MAXCHANNEL" value="false" />
   <parameter name="EXPLICIT_MAXCHANNEL" value="0" />
   <parameter name="AUTO_DEVICE_FAMILY" value="Arria II GX" />
+ </module>
+ <module
+   kind="altera_reset_bridge"
+   version="13.1"
+   enabled="1"
+   name="reset_bridge_0">
+  <parameter name="ACTIVE_LOW_RESET" value="0" />
+  <parameter name="SYNCHRONOUS_EDGES" value="deassert" />
+  <parameter name="NUM_RESET_OUTPUTS" value="3" />
+  <parameter name="AUTO_CLK_CLOCK_RATE" value="200000000" />
+ </module>
+ <module
+   kind="altera_clock_bridge"
+   version="13.1"
+   enabled="1"
+   name="clock_bridge_0">
+  <parameter name="DERIVED_CLOCK_RATE" value="0" />
+  <parameter name="EXPLICIT_CLOCK_RATE" value="200000000" />
+  <parameter name="NUM_CLOCK_OUTPUTS" value="1" />
  </module>
  <connection
    kind="reset"
@@ -493,15 +524,6 @@
   <parameter name="irqNumber" value="0" />
  </connection>
  <connection
-   kind="avalon"
-   version="13.1"
-   start="pcie_hard_ip_0.bar2"
-   end="modular_sgdma_dispatcher_0.Response_Slave">
-  <parameter name="arbitrationPriority" value="1" />
-  <parameter name="baseAddress" value="0x4030" />
-  <parameter name="defaultConnection" value="false" />
- </connection>
- <connection
    kind="clock"
    version="13.1"
    start="pcie_hard_ip_0.pcie_core_clk"
@@ -525,6 +547,16 @@
    kind="reset"
    version="13.1"
    start="pcie_hard_ip_0.pcie_core_reset"
+   end="dc_fifo_0.out_clk_reset" />
+ <connection
+   kind="avalon_streaming"
+   version="13.1"
+   start="dc_fifo_0.out"
+   end="dma_write_master_0.Data_Sink" />
+ <connection
+   kind="reset"
+   version="13.1"
+   start="pcie_hard_ip_0.pcie_core_reset"
    end="dma_write_master_0.Clock_reset" />
  <connection
    kind="clock"
@@ -532,15 +564,35 @@
    start="pcie_hard_ip_0.pcie_core_clk"
    end="dc_fifo_0.out_clk" />
  <connection
+   kind="clock"
+   version="13.1"
+   start="clock_bridge_0.out_clk"
+   end="reset_bridge_0.clk" />
+ <connection
+   kind="clock"
+   version="13.1"
+   start="clock_bridge_0.out_clk"
+   end="dc_fifo_0.in_clk" />
+ <connection
    kind="reset"
    version="13.1"
-   start="pcie_hard_ip_0.pcie_core_reset"
+   start="reset_bridge_0.out_reset_1"
    end="dc_fifo_0.out_clk_reset" />
  <connection
-   kind="avalon_streaming"
+   kind="reset"
    version="13.1"
-   start="dc_fifo_0.out"
-   end="dma_write_master_0.Data_Sink" />
+   start="reset_bridge_0.out_reset_2"
+   end="dma_write_master_0.Clock_reset" />
+ <connection
+   kind="reset"
+   version="13.1"
+   start="reset_bridge_0.out_reset"
+   end="dc_fifo_0.out_clk_reset" />
+ <connection
+   kind="reset"
+   version="13.1"
+   start="reset_bridge_0.out_reset"
+   end="dc_fifo_0.in_clk_reset" />
  <interconnectRequirement for="$system" name="qsys_mm.clockCrossingAdapter" value="FIFO" />
  <interconnectRequirement for="$system" name="qsys_mm.maxAdditionalLatency" value="2" />
  <interconnectRequirement for="$system" name="qsys_mm.insertDefaultSlave" value="false" />
