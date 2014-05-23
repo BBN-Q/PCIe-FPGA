@@ -47,6 +47,7 @@ ENTITY MyALTPLL IS
 		c0		: OUT STD_LOGIC ;
 		c1		: OUT STD_LOGIC ;
 		c2		: OUT STD_LOGIC ;
+		c3		: OUT STD_LOGIC ;
 		locked		: OUT STD_LOGIC 
 	);
 END MyALTPLL;
@@ -60,9 +61,10 @@ ARCHITECTURE SYN OF myaltpll IS
 	SIGNAL sub_wire3	: STD_LOGIC ;
 	SIGNAL sub_wire4	: STD_LOGIC ;
 	SIGNAL sub_wire5	: STD_LOGIC ;
-	SIGNAL sub_wire6	: STD_LOGIC_VECTOR (1 DOWNTO 0);
-	SIGNAL sub_wire7_bv	: BIT_VECTOR (0 DOWNTO 0);
-	SIGNAL sub_wire7	: STD_LOGIC_VECTOR (0 DOWNTO 0);
+	SIGNAL sub_wire6	: STD_LOGIC ;
+	SIGNAL sub_wire7	: STD_LOGIC_VECTOR (1 DOWNTO 0);
+	SIGNAL sub_wire8_bv	: BIT_VECTOR (0 DOWNTO 0);
+	SIGNAL sub_wire8	: STD_LOGIC_VECTOR (0 DOWNTO 0);
 
 
 
@@ -81,6 +83,10 @@ ARCHITECTURE SYN OF myaltpll IS
 		clk2_duty_cycle		: NATURAL;
 		clk2_multiply_by		: NATURAL;
 		clk2_phase_shift		: STRING;
+		clk3_divide_by		: NATURAL;
+		clk3_duty_cycle		: NATURAL;
+		clk3_multiply_by		: NATURAL;
+		clk3_phase_shift		: STRING;
 		compensate_clock		: STRING;
 		inclk0_input_frequency		: NATURAL;
 		intended_device_family		: STRING;
@@ -143,17 +149,19 @@ ARCHITECTURE SYN OF myaltpll IS
 	END COMPONENT;
 
 BEGIN
-	sub_wire7_bv(0 DOWNTO 0) <= "0";
-	sub_wire7    <= To_stdlogicvector(sub_wire7_bv);
-	sub_wire4    <= sub_wire0(2);
-	sub_wire3    <= sub_wire0(0);
+	sub_wire8_bv(0 DOWNTO 0) <= "0";
+	sub_wire8    <= To_stdlogicvector(sub_wire8_bv);
+	sub_wire5    <= sub_wire0(2);
+	sub_wire4    <= sub_wire0(0);
+	sub_wire2    <= sub_wire0(3);
 	sub_wire1    <= sub_wire0(1);
 	c1    <= sub_wire1;
-	locked    <= sub_wire2;
-	c0    <= sub_wire3;
-	c2    <= sub_wire4;
-	sub_wire5    <= inclk0;
-	sub_wire6    <= sub_wire7(0 DOWNTO 0) & sub_wire5;
+	c3    <= sub_wire2;
+	locked    <= sub_wire3;
+	c0    <= sub_wire4;
+	c2    <= sub_wire5;
+	sub_wire6    <= inclk0;
+	sub_wire7    <= sub_wire8(0 DOWNTO 0) & sub_wire6;
 
 	altpll_component : altpll
 	GENERIC MAP (
@@ -170,6 +178,10 @@ BEGIN
 		clk2_duty_cycle => 50,
 		clk2_multiply_by => 1,
 		clk2_phase_shift => "0",
+		clk3_divide_by => 1,
+		clk3_duty_cycle => 50,
+		clk3_multiply_by => 2,
+		clk3_phase_shift => "0",
 		compensate_clock => "CLK0",
 		inclk0_input_frequency => 10000,
 		intended_device_family => "Arria II GX",
@@ -206,7 +218,7 @@ BEGIN
 		port_clk0 => "PORT_USED",
 		port_clk1 => "PORT_USED",
 		port_clk2 => "PORT_USED",
-		port_clk3 => "PORT_UNUSED",
+		port_clk3 => "PORT_USED",
 		port_clk4 => "PORT_UNUSED",
 		port_clk5 => "PORT_UNUSED",
 		port_clk6 => "PORT_UNUSED",
@@ -225,9 +237,9 @@ BEGIN
 	)
 	PORT MAP (
 		areset => areset,
-		inclk => sub_wire6,
+		inclk => sub_wire7,
 		clk => sub_wire0,
-		locked => sub_wire2
+		locked => sub_wire3
 	);
 
 
@@ -256,12 +268,15 @@ END SYN;
 -- Retrieval info: PRIVATE: DIV_FACTOR0 NUMERIC "1"
 -- Retrieval info: PRIVATE: DIV_FACTOR1 NUMERIC "1"
 -- Retrieval info: PRIVATE: DIV_FACTOR2 NUMERIC "1"
+-- Retrieval info: PRIVATE: DIV_FACTOR3 NUMERIC "1"
 -- Retrieval info: PRIVATE: DUTY_CYCLE0 STRING "50.00000000"
 -- Retrieval info: PRIVATE: DUTY_CYCLE1 STRING "50.00000000"
 -- Retrieval info: PRIVATE: DUTY_CYCLE2 STRING "50.00000000"
+-- Retrieval info: PRIVATE: DUTY_CYCLE3 STRING "50.00000000"
 -- Retrieval info: PRIVATE: EFF_OUTPUT_FREQ_VALUE0 STRING "100.000000"
 -- Retrieval info: PRIVATE: EFF_OUTPUT_FREQ_VALUE1 STRING "125.000000"
 -- Retrieval info: PRIVATE: EFF_OUTPUT_FREQ_VALUE2 STRING "50.000000"
+-- Retrieval info: PRIVATE: EFF_OUTPUT_FREQ_VALUE3 STRING "200.000000"
 -- Retrieval info: PRIVATE: EXPLICIT_SWITCHOVER_COUNTER STRING "0"
 -- Retrieval info: PRIVATE: EXT_FEEDBACK_RADIO STRING "0"
 -- Retrieval info: PRIVATE: GLOCKED_COUNTER_EDIT_CHANGED STRING "1"
@@ -284,29 +299,36 @@ END SYN;
 -- Retrieval info: PRIVATE: LVDS_PHASE_SHIFT_UNIT0 STRING "deg"
 -- Retrieval info: PRIVATE: LVDS_PHASE_SHIFT_UNIT1 STRING "deg"
 -- Retrieval info: PRIVATE: LVDS_PHASE_SHIFT_UNIT2 STRING "deg"
+-- Retrieval info: PRIVATE: LVDS_PHASE_SHIFT_UNIT3 STRING "ps"
 -- Retrieval info: PRIVATE: MIG_DEVICE_SPEED_GRADE STRING "Any"
 -- Retrieval info: PRIVATE: MULT_FACTOR0 NUMERIC "1"
 -- Retrieval info: PRIVATE: MULT_FACTOR1 NUMERIC "1"
 -- Retrieval info: PRIVATE: MULT_FACTOR2 NUMERIC "1"
+-- Retrieval info: PRIVATE: MULT_FACTOR3 NUMERIC "1"
 -- Retrieval info: PRIVATE: NORMAL_MODE_RADIO STRING "1"
 -- Retrieval info: PRIVATE: OUTPUT_FREQ0 STRING "100.00000000"
 -- Retrieval info: PRIVATE: OUTPUT_FREQ1 STRING "125.00000000"
 -- Retrieval info: PRIVATE: OUTPUT_FREQ2 STRING "50.00000000"
+-- Retrieval info: PRIVATE: OUTPUT_FREQ3 STRING "200.00000000"
 -- Retrieval info: PRIVATE: OUTPUT_FREQ_MODE0 STRING "0"
 -- Retrieval info: PRIVATE: OUTPUT_FREQ_MODE1 STRING "1"
 -- Retrieval info: PRIVATE: OUTPUT_FREQ_MODE2 STRING "1"
+-- Retrieval info: PRIVATE: OUTPUT_FREQ_MODE3 STRING "1"
 -- Retrieval info: PRIVATE: OUTPUT_FREQ_UNIT0 STRING "MHz"
 -- Retrieval info: PRIVATE: OUTPUT_FREQ_UNIT1 STRING "MHz"
 -- Retrieval info: PRIVATE: OUTPUT_FREQ_UNIT2 STRING "MHz"
+-- Retrieval info: PRIVATE: OUTPUT_FREQ_UNIT3 STRING "MHz"
 -- Retrieval info: PRIVATE: PHASE_RECONFIG_FEATURE_ENABLED STRING "1"
 -- Retrieval info: PRIVATE: PHASE_RECONFIG_INPUTS_CHECK STRING "0"
 -- Retrieval info: PRIVATE: PHASE_SHIFT0 STRING "0.00000000"
 -- Retrieval info: PRIVATE: PHASE_SHIFT1 STRING "0.00000000"
 -- Retrieval info: PRIVATE: PHASE_SHIFT2 STRING "0.00000000"
+-- Retrieval info: PRIVATE: PHASE_SHIFT3 STRING "0.00000000"
 -- Retrieval info: PRIVATE: PHASE_SHIFT_STEP_ENABLED_CHECK STRING "0"
 -- Retrieval info: PRIVATE: PHASE_SHIFT_UNIT0 STRING "deg"
 -- Retrieval info: PRIVATE: PHASE_SHIFT_UNIT1 STRING "deg"
 -- Retrieval info: PRIVATE: PHASE_SHIFT_UNIT2 STRING "deg"
+-- Retrieval info: PRIVATE: PHASE_SHIFT_UNIT3 STRING "ps"
 -- Retrieval info: PRIVATE: PLL_ADVANCED_PARAM_CHECK STRING "0"
 -- Retrieval info: PRIVATE: PLL_ARESET_CHECK STRING "1"
 -- Retrieval info: PRIVATE: PLL_AUTOPLL_CHECK NUMERIC "1"
@@ -331,12 +353,14 @@ END SYN;
 -- Retrieval info: PRIVATE: STICKY_CLK0 STRING "1"
 -- Retrieval info: PRIVATE: STICKY_CLK1 STRING "1"
 -- Retrieval info: PRIVATE: STICKY_CLK2 STRING "1"
+-- Retrieval info: PRIVATE: STICKY_CLK3 STRING "1"
 -- Retrieval info: PRIVATE: SWITCHOVER_COUNT_EDIT NUMERIC "1"
 -- Retrieval info: PRIVATE: SWITCHOVER_FEATURE_ENABLED STRING "1"
 -- Retrieval info: PRIVATE: SYNTH_WRAPPER_GEN_POSTFIX STRING "0"
 -- Retrieval info: PRIVATE: USE_CLK0 STRING "1"
 -- Retrieval info: PRIVATE: USE_CLK1 STRING "1"
 -- Retrieval info: PRIVATE: USE_CLK2 STRING "1"
+-- Retrieval info: PRIVATE: USE_CLK3 STRING "1"
 -- Retrieval info: PRIVATE: USE_MIL_SPEED_GRADE NUMERIC "0"
 -- Retrieval info: PRIVATE: ZERO_DELAY_RADIO STRING "0"
 -- Retrieval info: LIBRARY: altera_mf altera_mf.altera_mf_components.all
@@ -353,6 +377,10 @@ END SYN;
 -- Retrieval info: CONSTANT: CLK2_DUTY_CYCLE NUMERIC "50"
 -- Retrieval info: CONSTANT: CLK2_MULTIPLY_BY NUMERIC "1"
 -- Retrieval info: CONSTANT: CLK2_PHASE_SHIFT STRING "0"
+-- Retrieval info: CONSTANT: CLK3_DIVIDE_BY NUMERIC "1"
+-- Retrieval info: CONSTANT: CLK3_DUTY_CYCLE NUMERIC "50"
+-- Retrieval info: CONSTANT: CLK3_MULTIPLY_BY NUMERIC "2"
+-- Retrieval info: CONSTANT: CLK3_PHASE_SHIFT STRING "0"
 -- Retrieval info: CONSTANT: COMPENSATE_CLOCK STRING "CLK0"
 -- Retrieval info: CONSTANT: INCLK0_INPUT_FREQUENCY NUMERIC "10000"
 -- Retrieval info: CONSTANT: INTENDED_DEVICE_FAMILY STRING "Arria II GX"
@@ -388,7 +416,7 @@ END SYN;
 -- Retrieval info: CONSTANT: PORT_clk0 STRING "PORT_USED"
 -- Retrieval info: CONSTANT: PORT_clk1 STRING "PORT_USED"
 -- Retrieval info: CONSTANT: PORT_clk2 STRING "PORT_USED"
--- Retrieval info: CONSTANT: PORT_clk3 STRING "PORT_UNUSED"
+-- Retrieval info: CONSTANT: PORT_clk3 STRING "PORT_USED"
 -- Retrieval info: CONSTANT: PORT_clk4 STRING "PORT_UNUSED"
 -- Retrieval info: CONSTANT: PORT_clk5 STRING "PORT_UNUSED"
 -- Retrieval info: CONSTANT: PORT_clk6 STRING "PORT_UNUSED"
@@ -410,6 +438,7 @@ END SYN;
 -- Retrieval info: USED_PORT: c0 0 0 0 0 OUTPUT_CLK_EXT VCC "c0"
 -- Retrieval info: USED_PORT: c1 0 0 0 0 OUTPUT_CLK_EXT VCC "c1"
 -- Retrieval info: USED_PORT: c2 0 0 0 0 OUTPUT_CLK_EXT VCC "c2"
+-- Retrieval info: USED_PORT: c3 0 0 0 0 OUTPUT_CLK_EXT VCC "c3"
 -- Retrieval info: USED_PORT: inclk0 0 0 0 0 INPUT_CLK_EXT GND "inclk0"
 -- Retrieval info: USED_PORT: locked 0 0 0 0 OUTPUT GND "locked"
 -- Retrieval info: CONNECT: @areset 0 0 0 0 areset 0 0 0 0
@@ -418,6 +447,7 @@ END SYN;
 -- Retrieval info: CONNECT: c0 0 0 0 0 @clk 0 0 1 0
 -- Retrieval info: CONNECT: c1 0 0 0 0 @clk 0 0 1 1
 -- Retrieval info: CONNECT: c2 0 0 0 0 @clk 0 0 1 2
+-- Retrieval info: CONNECT: c3 0 0 0 0 @clk 0 0 1 3
 -- Retrieval info: CONNECT: locked 0 0 0 0 @locked 0 0 0 0
 -- Retrieval info: GEN_FILE: TYPE_NORMAL MyALTPLL.vhd TRUE
 -- Retrieval info: GEN_FILE: TYPE_NORMAL MyALTPLL.ppf TRUE

@@ -4,6 +4,7 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
+use IEEE.STD_LOGIC_MISC.ALL;
 
 library streaming_sgdma;
 use streaming_sgdma.streaming_sgdma;
@@ -35,7 +36,7 @@ end entity ; -- BBN_Pulse_Counter_top
 architecture arch of BBN_Pulse_Counter_top is
 
 
-signal clk_50MHz, clk_100MHz, clk_125MHz : std_logic := '0';
+signal clk_50MHz, clk_100MHz, clk_125MHz, clk_200MHz : std_logic := '0';
 signal pllLocked : std_logic := '0';
 
 signal reconfig_fromgxb : std_logic_vector(16 downto 0) := (others => '0');
@@ -44,7 +45,7 @@ signal reconfigBusy : std_logic := '0';
 
 
 --Streaming data
-signal data_in_data               : std_logic_vector(31 downto 0) := (others => '0'); 
+signal data_in_data               : std_logic_vector(15 downto 0) := (others => '0'); 
 signal data_in_valid              : std_logic                     := '0';             
 signal data_in_ready              : std_logic                     := '0';                    
 
@@ -56,11 +57,33 @@ signal csrWE : std_logic := '0';
 signal controlWord, ledRate, clkCount : std_logic_vector(31 downto 0) ;
 
 --Pulse counts
-type PulseCountArray_t is array(0 to 15) of unsigned(31 downto 0) ;
-signal pulseCounts : PulseCountArray_t := (others => (others => '0'));
-signal fakePulses : std_logic_vector(3 downto 0) ;
+type Uint32Array_t is array(0 to 15) of unsigned(31 downto 0) ;
+signal pulseCounts : Uint32Array_t := (others => (others => '0'));
+
+signal statusRegs : Uint32Array_t := (others => (others => '0'));
+
+
+signal fakePulses : std_logic_vector(15 downto 0) ;
+type fakePulseArray_t is array(0 to 31) of std_logic_vector(15 downto 0);
+constant fakePulseArray : fakePulseArray_t := (x"0001", x"0002", x"0004", x"0008", x"0010", x"0020", x"0040", x"0080", 
+												x"0100", x"0200", x"0400", x"0800", x"1000", x"2000", x"4000", x"8000",
+												x"0101", x"0202", x"0404", x"0808", x"1010", x"2020", x"4040", x"8080",
+												x"0108", x"0204", x"0402", x"0801", x"1080", x"2040", x"4020", x"8010");
+
+
+signal pulseFlags : std_logic_vector(15 downto 0) := (others => '0');
+
+signal enable, clear : std_logic := '0';
 
 begin
+
+statusRegs(8) <= x"BAADF00F";
+statusRegs(9) <= x"BAADF11F";
+statusRegs(10) <= x"BAADF22F";
+statusRegs(11) <= x"BAADF33F";
+statusRegs(12) <= x"BAADF44F";
+
+enable <= controlWord(0);
 
 --Transform 100MHz input clock into needed frequencies
 myPLL : entity work.MyALTPLL
@@ -70,6 +93,7 @@ myPLL : entity work.MyALTPLL
 		c0 => clk_100MHz,
 		c1 => clk_125MHz,
 		c2 => clk_50MHz,
+		c3 => clk_200MHz,
 		locked => pllLocked);
 
 --Reset reconfiguration: not really sure what this does
@@ -113,11 +137,12 @@ qsys : entity streaming_sgdma.streaming_sgdma
 		pcie_hard_ip_0_test_out_test_out => open,
 
 		--Streaming Avalon ports
-		data_in_clk_clk           => clk_100MHz, 
-        data_in_clk_reset_reset_n => resetn,
         data_in_data              => data_in_data,
         data_in_valid             => data_in_valid,
         data_in_ready             => data_in_ready,
+
+		reset_bridge_0_in_reset_reset => not controlWord(0),
+        clock_bridge_0_in_clk_clk => clk_200MHz,
 
         --On chip memory as poor-man's CSR
         onchip_memory2_0_clk2_clk => clk_100MHz,
@@ -150,7 +175,7 @@ begin
 	 		csrWE <= '0';
 	 	else
 	 		csrWE <= '1';
-			csrWriteData <= std_logic_vector(pulseCounts(to_integer(csrAddr - 15)));
+			csrWriteData <= std_logic_vector(statusRegs(to_integer(csrAddr - 15)));
 	 	end if;
  	
  		if (csrAddr = b"00001") then
@@ -167,49 +192,59 @@ begin
 
 end process ; -- csr
 
---Count pulses coming in 
-genCounters: for ct in 0 to 3 generate
-	counter : entity work.PulseCounter
+--Setup flacters for all the pulse lines
+genFlancters : for ct in 0 to 15 generate
+	flancterGen : entity work.Flancter
 		port map(
-			reset => not resetn,
-			clk => clk_100MHz,
-			clkCount => clkCount,
-			pulseLine => fakePulses(ct),
-			unsigned(pulseCount) => pulseCounts(ct)
+			sysclk => clk_200MHz,
+			pulse => fakePulses(ct),
+			clr => clear,
+			enable => enable,
+			flag => pulseFlags(ct)
 		);
-end generate genCounters;
+end generate ; -- genFlancters
 
 
-genCountersBis: for ct in 4 to 7 generate
-	counterBis : entity work.PulseCounter
-		port map(
-			reset => not resetn,
-			clk => clk_100MHz,
-			clkCount => clkCount,
-			pulseLine => pulseInputs(ct),
-			unsigned(pulseCount) => pulseCounts(ct)
-		);
-end generate genCountersBis;
+--State machine to catch pulses
+PulseCatcher : process( clk_200MHz )
+type State_t is (IDLE, LATCH, CLR);
+variable state : State_t := IDLE; 
+variable ct : unsigned(31 downto 0) := (others => '0');
 
-
---Mock up data streaming in as a counter for now
-fakeData : process( resetn, clk_100MHz )
-variable counter : unsigned(31 downto 0) := (others => '0');
 begin
-	data_in_data <= std_logic_vector(counter);
-	data_in_valid <= '1';
-	if resetn = '0' then
-		counter := (others => '0');
-	elsif rising_edge(clk_100MHz) and data_in_ready = '1' then
-		counter := counter + 1;
-	end if;
-end process ; -- fakeData
+	if rising_edge(clk_200MHz) then
+		statusRegs(1) <= ct;
 
-pulseCounts(8) <= x"BAADF00F";
-pulseCounts(9) <= x"BAADF11F";
-pulseCounts(10) <= x"BAADF22F";
-pulseCounts(11) <= x"BAADF33F";
-pulseCounts(12) <= x"BAADF44F";
+		case( state ) is
+
+			when IDLE =>
+				data_in_data <= (others => '0');
+				data_in_valid <= '0';
+				clear <= '0';
+
+				--Wait for any of the flancter flags to go high
+				if or_reduce(pulseFlags) = '1' then
+					state := LATCH;
+				end if;
+
+			when LATCH =>
+				data_in_data <= pulseFlags;
+				data_in_valid <= '1';
+				state := CLR;
+				ct := ct+1;
+
+			when CLR =>
+				data_in_valid <= '0';
+				clear <= '1';
+				state := IDLE;
+
+			when others =>
+				null;
+		
+		end case ;
+		
+	end if ;
+end process ; -- PulseCatcher
 
 --For now put a slow counter out on the LEDS so we know the board alive
 
@@ -220,7 +255,6 @@ variable slowCounter : unsigned(3 downto 0) := (others => '0');
 
 begin
 	leds <= not std_logic_vector(slowCounter);
-	fakePulses <= std_logic_vector(slowCounter);
 	if resetn = '0' then
 		counter := (others => '0');
 		slowCounter := (others => '0');
@@ -237,7 +271,32 @@ begin
 end process ; -- counter
 
 
+--For now put a slow counter out on the LEDS so we know the board alive
 
+countpro2 : process( resetn, clk_100MHz )
+
+variable counter : unsigned(31 downto 0) := (others => '0');
+variable slowCounter : unsigned(4 downto 0) := (others => '0');
+
+begin
+	if resetn = '0' or controlWord(0) = '0' then
+		counter := (others => '0');
+		slowCounter := (others => '0');
+		fakePulses <= (others => '0');
+	elsif rising_edge(clk_100MHz) then
+		if (counter < unsigned(ledRate)) then
+			counter := counter + 1;
+		else
+			counter := (others => '0');
+		end if;
+		if counter = 0 then
+			slowCounter := slowCounter + 1;
+			fakePulses <= fakePulseArray(to_integer(slowCounter));
+		else
+			fakePulses <= (others => '0');
+		end if;
+	end if;
+end process ; -- counter
 
 
 end architecture ; -- arch
