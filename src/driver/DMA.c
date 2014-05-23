@@ -150,10 +150,14 @@ int dma_read(char __user * buf, size_t count, struct DevInfo_t * devInfo){
 	dev_dbg(&devInfo->pciDev->dev, "Getting DMA status register");
 	dmaStatus = ioread32(devInfo->bar[SGDMA_BAR] + SGDMA_CSR_ADDR);
 	dev_dbg(&devInfo->pciDev->dev, "Got DMA status 0x%x", dmaStatus);
-	while((dmaStatus & 0x1)){
-		// dev_dbg(&devInfo->pciDev->dev, "Waiting for reads to finish with dmaStatus = 0x%x.", dmaStatus);
-		udelay(10);
+
+	//Time-out after 60 seconds	
+	ct = 0;
+	while((dmaStatus & 0x1) && (ct<600000)){
+		dev_dbg(&devInfo->pciDev->dev, "Waiting for reads to finish with dmaStatus = 0x%x.", dmaStatus);
+		udelay(100);
 		dmaStatus = ioread32(devInfo->bar[SGDMA_BAR] + SGDMA_CSR_ADDR);
+		ct++;
 	}
 
 	//Read the response registers
@@ -187,3 +191,4 @@ int dma_read(char __user * buf, size_t count, struct DevInfo_t * devInfo){
 
 	return count;
 }
+
