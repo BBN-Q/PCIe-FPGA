@@ -12,6 +12,7 @@ from enaml.widgets.timer import Timer
 enamldef PulseCounterMainWin(Window): main:
     attr counter
     attr fig
+    attr lib
     Container:
         constraints = [
             hbox(
