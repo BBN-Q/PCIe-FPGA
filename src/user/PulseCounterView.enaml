@@ -1,0 +1,67 @@
+# Copyright 2014 Raytheon BBN Technologies
+# Original Author: Colm Ryan (cryan@bbn.com)
+
+from enaml.layout.api import vbox, hbox, spacer
+from enaml.widgets.api import Window, Container, MPLCanvas, CheckBox, GroupBox, Form, Label, PushButton
+from enaml.stdlib.fields import FloatField
+
+from PulseCounter import count_pixels, plot_counts
+from enaml.widgets.timer import Timer
+
+
+enamldef PulseCounterMainWin(Window): main:
+    attr counter
+    attr fig
+    Container:
+        constraints = [
+            hbox(
+                canvas,
+                vbox(toolbarCheck, captureParamsBox,
+                    hbox(startButton, stopButton)
+                )
+            ),
+            startButton.width == stopButton.width
+        ]
+        CheckBox: toolbarCheck:
+            text = 'Toolbar Visible'
+            checked := canvas.toolbar_visible
+        GroupBox: captureParamsBox:
+            title = "Windowed Capture"
+            CheckBox: 
+                text = "Enable"
+                checked := counter.windowed
+            Form:
+                Label:
+                    text = "Rep. Rate"
+                FloatField:
+                    value := counter.repRate
+                Label:
+                    text = "Delay"
+                FloatField:
+                    value := counter.delay
+                Label:
+                    text = "Window"
+                FloatField:
+                    value := counter.window
+        PushButton: startButton:
+            text = "Start"
+            clicked ::
+                print("Starting acquisition....")
+                timer.start()
+        PushButton: stopButton:
+            text = "Stop"
+            clicked ::
+                print("Stoping acquisition...")
+                timer.stop()
+        Timer: timer:
+            interval = 500
+            single_shot = False
+            timeout ::
+                    print("Got here!")
+                    pixelCounts = count_pixels(counter)
+                    main.fig = plot_counts(pixelCounts)
+
+
+
+        MPLCanvas: canvas:
+            figure << fig
