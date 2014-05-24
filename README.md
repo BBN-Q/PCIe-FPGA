@@ -24,4 +24,25 @@ Driver Software
 5. Move back into the test directory.  Compile the test program with: ```g++ -std=c++11 test.cpp -o test.out``` and then run the executable for some simple read/write tests.
 
 
+
+Dependencies
+=============
+
+FPGA
+----------
+The bitfile was compiled using Quartus 13.1.  There is a qsys memory map using the [Altera modular DMA engine](http://www.alterawiki.com/wiki/Modular_SGDMA). 
+
+C++ Code
+-----------
+A recent gcc compiler with C++11 support.  gcc 4.7.3 or later should work.
+
+Python
+---------
+All of these are available with a simple ```pip install x```
+* numpy
+* matplotlib
+* enaml
+* atom
+* brewer2mpl
+
  
