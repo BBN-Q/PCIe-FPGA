@@ -129,7 +129,7 @@ bool test_dma_stream(int FID, int numBytes){
 
 	read(FID, &iocmd, numBytes);
 
-	vector<uint32_t> testVec(static_cast<uint32_t*>(iocmd.userAddr), static_cast<uint32_t*>(iocmd.userAddr)+numBytes/4) ;
+	vector<uint32_t> testVec(static_cast<uint16_t*>(iocmd.userAddr), static_cast<uint16_t*>(iocmd.userAddr)+numBytes/2) ;
 
     auto end = std::chrono::steady_clock::now();
 
@@ -160,17 +160,20 @@ int main(int argc, char const *argv[])
 		return -1;
 	}
 
-	bool testResult = test_small_writes(FID, 100);
-	if (testResult){
-		cout << "Successfully tested byte and word write/reads." << endl;
-	}
+	// bool testResult = test_small_writes(FID, 100);
+	// if (testResult){
+	// 	cout << "Successfully tested byte and word write/reads." << endl;
+	// }
 
-	testResult = test_long_write(FID);
-	if (testResult){
-		cout << "Successfully tested long write/read." << endl;
-	}
+	// testResult = test_long_write(FID);
+	// if (testResult){
+	// 	cout << "Successfully tested long write/read." << endl;
+	// }
 
-	testResult = test_dma_stream(FID, 2048*1024);
+	bool testResult = test_dma_stream(FID, 1 << 23);
+	if (testResult){
+		cout << "Successfully tested DMA read." << endl;
+	}
 	
 	close(FID);
 
