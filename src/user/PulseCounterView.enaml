@@ -13,6 +13,7 @@ enamldef PulseCounterMainWin(Window): main:
     attr counter
     attr fig
     attr lib
+    title = "BBN Pulse Counter"
     Container:
         constraints = [
             hbox(
@@ -58,9 +59,8 @@ enamldef PulseCounterMainWin(Window): main:
             interval = 500
             single_shot = False
             timeout ::
-                    print("Got here!")
-                    pixelCounts = count_pixels(counter)
-                    main.fig = plot_counts(pixelCounts)
+                    pixelCounts, badCounts = count_pixels(counter)
+                    main.fig = plot_counts(pixelCounts, badCounts)
 
 
 

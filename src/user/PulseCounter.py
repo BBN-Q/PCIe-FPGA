@@ -7,6 +7,7 @@ import enaml
 from enaml.qt.qt_application import QtApplication
 
 import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle
 import brewer2mpl
 
 import numpy as np
@@ -74,10 +75,29 @@ class PulseCounter(Atom):
 #Single counts dictionary  to pixels where we get one row or colum is all pop counts of one
 singleCounts = { ((1 << r) + (1 << c)):ct for ct, (r,c) in enumerate( product(range(8,16), range(8)) )}
 
+#Array for fast lookup of pop-count for uint16
+POPCOUNT_TABLE16 = [0] * 2**16
+for index in xrange(len(POPCOUNT_TABLE16)):
+    POPCOUNT_TABLE16[index] = (index & 1) + POPCOUNT_TABLE16[index >> 1]
+
+
 def fake_pulses(n):
 	""" Fake data acquisition with a 100ms delay. """
 	sleep(0.1)
-	return np.array([choice(singleCounts.keys()) for _ in range(n)], dtype=np.uint16)
+	pulsePosibilites = singleCounts.keys() + [0, 1]
+	return np.array([choice(pulsePosibilites) for _ in range(n)], dtype=np.uint16)
+
+def pulse2pixel(pulse):
+	if pulse in singleCounts:
+		return singleCounts[pulse]
+	else:
+		popCount = POPCOUNT_TABLE16[pulse]
+		if popCount == 0:
+			return 64
+		elif popCount == 1:
+			return 65
+		else:
+			return 66
 
 def count_pixels(counter, fakeIt=False):
 	#Get some counts
@@ -91,18 +111,23 @@ def count_pixels(counter, fakeIt=False):
 		pulses = run_capture(2**12, counter.lib)
 
 	#Reduce to pixels
-	pixelizer = np.vectorize(lambda x: singleCounts[x])
-	pixelCounts = pixelizer(pulses)
-	pixelCounts.resize((8,8))
+	pixelizer = np.vectorize(pulse2pixel)
+	pixelCounts = np.bincount(pixelizer(pulses), minlength=67)
 
-	return pixelCounts 
+	return pixelCounts[:64].reshape((8,8)), pixelCounts[64:]
 
 
 reds = brewer2mpl.get_map('Reds', 'Sequential', 9).mpl_colormap
 
-def plot_counts(pixelCounts):
+def plot_counts(pixelCounts, badCounts):
 	fig, ax = plt.subplots(1)
 	img = ax.pcolorfast(pixelCounts, cmap=reds)
+	ax.set_xticks([])
+	ax.set_yticks([])
+	errorTexts = ["0", "1", ">2"]
+	for ct in range(3):
+		ax.add_patch( Rectangle((-1.25, ct), 1, 1, clip_on=False, edgecolor="none", facecolor=reds(float(badCounts[ct])/pixelCounts.max()) ) )
+		ax.text(-0.75, ct+0.5, errorTexts[ct], fontsize=16, horizontalalignment="center", verticalalignment="center")
 	plt.colorbar(img)
 	return fig
 
