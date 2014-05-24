@@ -54,7 +54,7 @@ signal csrReadData, csrWriteData : std_logic_vector(31 downto 0) := (others => '
 signal csrAddr : unsigned(4 downto 0) := (others => '0') ;
 signal csrWE : std_logic := '0';
 
-signal controlWord, ledRate, clkCount : std_logic_vector(31 downto 0) ;
+signal controlWord, clkRate : std_logic_vector(31 downto 0) ;
 
 --Pulse counts
 type Uint32Array_t is array(0 to 15) of unsigned(31 downto 0) ;
@@ -166,7 +166,7 @@ begin
  		csrAddr <= (others => '0');
  		csrWE <= '0';
  		controlWord <= (others => '0');
- 		ledRate <= (others => '0');
+ 		clkRate <= (others => '0');
  	elsif rising_edge(clk_100Mhz) then
 
  		csrAddr <= csrAddr + 1;
@@ -182,10 +182,7 @@ begin
  			controlWord <= csrReadData;
  		end if;
  		if (csrAddr = b"00010") then
- 			ledRate <= csrReadData;
- 		end if;
- 		if (csrAddr = b"00011") then
- 			clkCount <= csrReadData;
+ 			clkRate <= csrReadData;
  		end if;
 	 		
 	end if;
@@ -259,7 +256,7 @@ begin
 		counter := (others => '0');
 		slowCounter := (others => '0');
 	elsif rising_edge(clk_100MHz) then
-		if (counter < unsigned(ledRate)) then
+		if (counter < unsigned(clkRate)) then
 			counter := counter + 1;
 		else
 			counter := (others => '0');
@@ -284,7 +281,7 @@ begin
 		slowCounter := (others => '0');
 		fakePulses <= (others => '0');
 	elsif rising_edge(clk_100MHz) then
-		if (counter < unsigned(ledRate)) then
+		if (counter < unsigned(clkRate)) then
 			counter := counter + 1;
 		else
 			counter := (others => '0');
