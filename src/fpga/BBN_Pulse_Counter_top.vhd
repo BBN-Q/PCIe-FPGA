@@ -28,13 +28,15 @@ entity BBN_Pulse_Counter_top is
 		tx_out3 : out std_logic;
 
 		--HSMC lines for pulse counting
-		pulseInputs : in std_logic_vector(15 downto 0) 
+		pulseInputs : in std_logic_vector(15 downto 0);
+
+		--Trigger out to sync other equipment
+		trigOut : buffer std_logic
 	) ;
 
 end entity ; -- BBN_Pulse_Counter_top
 
 architecture arch of BBN_Pulse_Counter_top is
-
 
 signal clk_50MHz, clk_100MHz, clk_125MHz, clk_200MHz : std_logic := '0';
 signal pllLocked : std_logic := '0';
@@ -54,7 +56,7 @@ signal csrReadData, csrWriteData : std_logic_vector(31 downto 0) := (others => '
 signal csrAddr : unsigned(4 downto 0) := (others => '0') ;
 signal csrWE : std_logic := '0';
 
-signal controlWord, clkRate : std_logic_vector(31 downto 0) ;
+signal controlWord, clkRate, repRateCt, trigDelayCt, captureWindowCt : std_logic_vector(31 downto 0) ;
 
 --Pulse counts
 type Uint32Array_t is array(0 to 15) of unsigned(31 downto 0) ;
@@ -71,19 +73,29 @@ constant fakePulseArray : fakePulseArray_t := (x"0001", x"0002", x"0004", x"0008
 												x"0108", x"0204", x"0402", x"0801", x"1080", x"2040", x"4020", x"8010");
 
 
-signal pulseFlags : std_logic_vector(15 downto 0) := (others => '0');
+signal pulseInputsFixed, pulseFlags : std_logic_vector(15 downto 0) := (others => '0');
 
-signal enable, clear : std_logic := '0';
+constant PULSEFIXER : std_logic_vector(15 downto 0) := b"00000000" & b"11111111";
+
+signal enable, windowEnable, clear : std_logic := '0';
 
 begin
 
+
+--The columns have inverted inputs so flip
+
+pulseInputsFixed <= PULSEFIXER xor pulseInputs;
+
+--Enable when everything is go and window is high
+enable <= controlWord(0) and windowEnable;
+
+
+--Bonus outputs so I know something is working.
 statusRegs(8) <= x"BAADF00F";
 statusRegs(9) <= x"BAADF11F";
 statusRegs(10) <= x"BAADF22F";
 statusRegs(11) <= x"BAADF33F";
-statusRegs(12) <= x"BAADF44F";
 
-enable <= controlWord(0);
 
 --Transform 100MHz input clock into needed frequencies
 myPLL : entity work.MyALTPLL
@@ -178,15 +190,22 @@ begin
 			csrWriteData <= std_logic_vector(statusRegs(to_integer(csrAddr - 15)));
 	 	end if;
  	
- 		if (csrAddr = b"00001") then
- 			controlWord <= csrReadData;
- 		end if;
- 		if (csrAddr = b"00010") then
- 			clkRate <= csrReadData;
- 		end if;
-	 		
+	 	case( csrAddr ) is
+	 	
+	 		when b"00001" =>
+	 			controlWord <= csrReadData;
+	 		when b"00010" =>
+	 			clkRate <= csrReadData;
+	 		when b"00011" =>
+	 			repRateCt <= csrReadData;
+	 		when b"00100" =>
+	 			trigDelayCt <= csrReadData;
+	 		when b"00101" =>
+	 			captureWindowCt <= csrReadData;
+	 		when others =>
+	 			null;
+	 	end case ; 		
 	end if;
-
 end process ; -- csr
 
 --Setup flacters for all the pulse lines
@@ -194,19 +213,19 @@ genFlancters : for ct in 0 to 15 generate
 	flancterGen : entity work.Flancter
 		port map(
 			sysclk => clk_200MHz,
-			pulse => fakePulses(ct),
+			pulse => pulseInputsFixed(ct),
 			clr => clear,
 			enable => enable,
 			flag => pulseFlags(ct)
 		);
 end generate ; -- genFlancters
 
-
 --State machine to catch pulses
 PulseCatcher : process( clk_200MHz )
-type State_t is (IDLE, LATCH, CLR);
+type State_t is (IDLE, TRIGDELAY, CAPTURE, LATCH, CLR);
 variable state : State_t := IDLE; 
 variable ct : unsigned(31 downto 0) := (others => '0');
+variable count : unsigned(31 downto 0) := (others => '0');
 
 begin
 	if rising_edge(clk_200MHz) then
@@ -218,15 +237,39 @@ begin
 				data_in_data <= (others => '0');
 				data_in_valid <= '0';
 				clear <= '0';
+				count := (others => '0');
 
-				--Wait for any of the flancter flags to go high
-				if or_reduce(pulseFlags) = '1' then
+				if controlWord(1) = '1' then
+					windowEnable <= '0';
+					if trigOut <= '1' then
+						state := TRIGDELAY;
+					end if;
+				else
+					windowEnable <= '1';
+					--Wait for any of the flancter flags to go high
+					if or_reduce(pulseFlags) = '1' then
+						state := LATCH;
+					end if;
+				end if;
+
+			when TRIGDELAY =>
+				count := count + 1;
+				if count = unsigned(trigDelayCt) then
+					state := CAPTURE;
+					count := (others => '0');
+				end if;
+
+			when CAPTURE => 
+				count := count + 1;
+				windowEnable <= '1';
+				if count = unsigned(captureWindowCt) then
 					state := LATCH;
 				end if;
 
 			when LATCH =>
 				data_in_data <= pulseFlags;
 				data_in_valid <= '1';
+				windowEnable <= '0';
 				state := CLR;
 				ct := ct+1;
 
@@ -243,6 +286,25 @@ begin
 	end if ;
 end process ; -- PulseCatcher
 
+--Exp. repitition rate
+experimentRep : process( resetn, clk_100Mhz )
+variable counter : unsigned(31 downto 0) := (others => '0');
+begin
+	if resetn = '0' then
+		counter := (others => '0');
+		trigOut <= '0';
+	elsif rising_edge(clk_100MHz) then
+		counter := counter + 1;
+		trigOut <= '0';
+		if counter = unsigned(repRateCt) then
+			counter := (others => '0');
+			trigOut <= '1';
+		end if ;
+	end if;
+end process ; -- experimentRep
+
+
+
 --For now put a slow counter out on the LEDS so we know the board alive
 
 countpro : process( resetn, clk_100MHz )
@@ -256,10 +318,10 @@ begin
 		counter := (others => '0');
 		slowCounter := (others => '0');
 	elsif rising_edge(clk_100MHz) then
-		if (counter < unsigned(clkRate)) then
-			counter := counter + 1;
-		else
+		if (counter = unsigned(clkRate)) then
 			counter := (others => '0');
+		else
+			counter := counter + 1;
 		end if;
 		if counter = 0 then
 			slowCounter := slowCounter + 1;
@@ -268,8 +330,7 @@ begin
 end process ; -- counter
 
 
---For now put a slow counter out on the LEDS so we know the board alive
-
+--Fake pulses counter
 countpro2 : process( resetn, clk_100MHz )
 
 variable counter : unsigned(31 downto 0) := (others => '0');
@@ -281,10 +342,10 @@ begin
 		slowCounter := (others => '0');
 		fakePulses <= (others => '0');
 	elsif rising_edge(clk_100MHz) then
-		if (counter < unsigned(clkRate)) then
-			counter := counter + 1;
-		else
+		if (counter = unsigned(clkRate)) then
 			counter := (others => '0');
+		else
+			counter := counter + 1;
 		end if;
 		if counter = 0 then
 			slowCounter := slowCounter + 1;
