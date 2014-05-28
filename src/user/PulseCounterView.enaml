@@ -8,6 +8,7 @@ from enaml.stdlib.fields import FloatField
 from PulseCounter import count_pixels, plot_counts
 from enaml.widgets.timer import Timer
 
+import numpy as np
 
 enamldef PulseCounterMainWin(Window): main:
     attr counter
@@ -18,7 +19,7 @@ enamldef PulseCounterMainWin(Window): main:
         constraints = [
             hbox(
                 canvas,
-                vbox(toolbarCheck, captureParamsBox,
+                vbox(toolbarCheck, saveFileCheck, captureParamsBox,
                     hbox(startButton, stopButton)
                 )
             ),
@@ -27,6 +28,8 @@ enamldef PulseCounterMainWin(Window): main:
         CheckBox: toolbarCheck:
             text = 'Toolbar Visible'
             checked := canvas.toolbar_visible
+        CheckBox: saveFileCheck:
+            text = 'Save to File'
         GroupBox: captureParamsBox:
             title = "Windowed Capture"
             CheckBox: 
@@ -61,5 +64,7 @@ enamldef PulseCounterMainWin(Window): main:
             timeout ::
                     pixelCounts, badCounts = count_pixels(counter)
                     main.fig = plot_counts(pixelCounts, badCounts)
+                    if saveFileCheck.checked:
+                        np.savetxt("PulseCounts.tsv", pixelCounts, fmt='%d', delimiter='\t')
         MPLCanvas: canvas:
             figure << fig
