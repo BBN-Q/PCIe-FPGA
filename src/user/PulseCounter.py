@@ -124,6 +124,7 @@ def plot_counts(pixelCounts, badCounts):
 	img = ax.pcolorfast(pixelCounts, cmap=reds)
 	ax.set_xticks([])
 	ax.set_yticks([])
+	ax.invert_yaxis()
 	errorTexts = ["0", "1", ">2"]
 	for ct in range(3):
 		ax.add_patch( Rectangle((-1.25, ct), 1, 1, clip_on=False, edgecolor="none", facecolor=reds(float(badCounts[ct])/pixelCounts.max()) ) )
