@@ -51,6 +51,7 @@ enamldef PulseCounterMainWin(Window): main:
         PushButton: startButton:
             text = "Start"
             clicked ::
+                write_counters(counter)
                 print("Starting acquisition....")
                 timer.start()
         PushButton: stopButton:

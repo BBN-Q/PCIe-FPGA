@@ -22,6 +22,9 @@ import resource
 
 CONTROL_REG = 0
 CLKRATE_REG = 1
+REPRATE_REG = 2
+TRIGDELAY_REG = 3
+WINDOW_REG = 4
 
 ENABLE_BIT = 0
 
@@ -80,7 +83,6 @@ POPCOUNT_TABLE16 = [0] * 2**16
 for index in xrange(len(POPCOUNT_TABLE16)):
     POPCOUNT_TABLE16[index] = (index & 1) + POPCOUNT_TABLE16[index >> 1]
 
-
 def fake_pulses(n):
 	""" Fake data acquisition with a 100ms delay. """
 	sleep(0.1)
@@ -116,6 +118,17 @@ def count_pixels(counter, fakeIt=False):
 
 	return pixelCounts[:64].reshape((8,8)), pixelCounts[64:]
 
+def write_counters(counter):
+	"""
+	Write window count registers. 
+	"""
+
+	#rep rate runs of 100MHz clock for now
+	lib.write_register(CLKRATE_REG, int(counter.repRate/10e-9))
+
+	#trig delay, and window run off 200MHz state machine clock
+	lib.write_register(TRIGDELAY_REG, int(counter.delay/10e-9))
+	lib.write_register(WINDOW_REG, int(counter.window/10e-9))
 
 reds = brewer2mpl.get_map('Reds', 'Sequential', 9).mpl_colormap
 
