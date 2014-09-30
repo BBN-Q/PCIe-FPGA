@@ -1,6 +1,5 @@
 # Copyright 2014 Raytheon BBN Technologies
 # Original Author: Colm Ryan (cryan@bbn.com)
-
 from atom.api import Atom, Float, Bool, Instance
 
 import enaml
@@ -118,7 +117,7 @@ def count_pixels(counter, fakeIt=False):
 
 	return pixelCounts[:64].reshape((8,8)), pixelCounts[64:]
 
-def write_counters(counter):
+def write_counters(counter, lib):
 	"""
 	Write window count registers. 
 	"""

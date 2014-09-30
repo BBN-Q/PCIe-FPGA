@@ -5,7 +5,7 @@ from enaml.layout.api import vbox, hbox, spacer
 from enaml.widgets.api import Window, Container, MPLCanvas, CheckBox, GroupBox, Form, Label, PushButton
 from enaml.stdlib.fields import FloatField
 
-from PulseCounter import count_pixels, plot_counts
+from PulseCounter import count_pixels, plot_counts, write_counters
 from enaml.widgets.timer import Timer
 
 import numpy as np
@@ -51,7 +51,7 @@ enamldef PulseCounterMainWin(Window): main:
         PushButton: startButton:
             text = "Start"
             clicked ::
-                write_counters(counter)
+                write_counters(counter, lib)
                 print("Starting acquisition....")
                 timer.start()
         PushButton: stopButton:
